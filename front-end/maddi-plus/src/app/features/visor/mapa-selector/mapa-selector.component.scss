@@ -1,0 +1,127 @@
+// ── Variables ─────────────────────────────────────────────
+$maddi-green:       #72c041;
+$maddi-green-dark:  #5a9e32;
+$maddi-green-light: #eaf5e0;
+$shadow:            0 4px 16px rgba(0, 0, 0, 0.18);
+
+:host {
+  position: relative;
+  display: block;
+}
+
+// ── Botón circular ────────────────────────────────────────
+.toggle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: $maddi-green;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: $shadow;
+  transition: background 0.2s, transform 0.15s;
+
+  &:hover {
+    background: $maddi-green-dark;
+    transform: scale(1.07);
+  }
+
+  &.activo {
+    background: $maddi-green-dark;
+    box-shadow: 0 0 0 3px rgba(114, 192, 65, 0.35);
+  }
+}
+
+// ── Panel desplegable ─────────────────────────────────────
+.panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 220px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: $shadow;
+  padding: 10px 0 6px;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+
+  .panel-titulo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $maddi-green-dark;
+    padding: 0 14px 8px;
+    border-bottom: 1px solid #e5e5e5;
+    margin: 0 0 6px;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+    margin: 0 4px;
+
+    &:hover {
+      background: $maddi-green-light;
+    }
+
+    &.activo {
+      background: $maddi-green-light;
+
+      .nombre {
+        color: $maddi-green-dark;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .preview {
+    width: 42px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 5px;
+    flex-shrink: 0;
+    border: 1px solid #ddd;
+  }
+
+  .preview-placeholder {
+    width: 42px;
+    height: 42px;
+    border-radius: 5px;
+    background: #e0e0e0;
+    flex-shrink: 0;
+  }
+
+  .nombre {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .check-icon {
+    flex-shrink: 0;
+    color: $maddi-green;
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

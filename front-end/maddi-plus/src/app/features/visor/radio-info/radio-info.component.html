@@ -1,0 +1,61 @@
+<div class="radio-info-panel">
+
+  <!-- Cabecera: fracción + dirección + cerrar -->
+  <div class="panel-header">
+    <div class="contenedor-info">
+      <span class="fraccion-chip" [style.background]="colorFraccion(contenedor?.fraccion)">
+        {{ contenedor?.fraccion }}
+      </span>
+      <span class="direccion" [title]="contenedor?.direccion ?? ''">{{ contenedor?.direccion }}</span>
+    </div>
+    <button class="close-btn" type="button" title="Cerrar" (click)="cerrado.emit()">✕</button>
+  </div>
+
+  <!-- Slider de radio -->
+  <div class="radio-control">
+    <label>Radio de búsqueda</label>
+    <div class="slider-row">
+      <input
+        type="range"
+        min="50"
+        max="500"
+        step="10"
+        [(ngModel)]="radioTemp"
+        (input)="onSliderInput()"
+        (change)="onSliderChange()"
+      />
+      <span class="radio-value">{{ radioTemp }} m</span>
+    </div>
+  </div>
+
+  <!-- Encabezado de resultados -->
+  <div class="resultados-header">
+    <span *ngIf="cargando" class="cargando-text">Buscando…</span>
+    <span *ngIf="!cargando">
+      {{ portales.length }} edificio{{ portales.length !== 1 ? 's' : '' }} encontrado{{ portales.length !== 1 ? 's' : '' }}
+    </span>
+  </div>
+
+  <!-- Lista de portales -->
+  <div class="portal-lista">
+
+    <div *ngIf="cargando" class="spinner-wrap">
+      <div class="spinner"></div>
+    </div>
+
+    <p *ngIf="!cargando && portales.length === 0" class="empty">
+      Sin edificios en este radio.
+    </p>
+
+    <ul *ngIf="!cargando && portales.length > 0">
+      <li *ngFor="let p of portales" class="portal-item">
+        <div *ngFor="let prop of propiedades(p.properties)" class="prop-row">
+          <span class="prop-key">{{ prop.k }}</span>
+          <span class="prop-val">{{ prop.v }}</span>
+        </div>
+      </li>
+    </ul>
+
+  </div>
+
+</div>

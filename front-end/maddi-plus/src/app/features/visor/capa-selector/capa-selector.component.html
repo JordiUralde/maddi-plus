@@ -1,0 +1,39 @@
+<div class="selector-wrapper">
+
+  <!-- Botón circular -->
+  <button
+    class="toggle-btn"
+    (click)="togglePanel()"
+    [class.activo]="abierto"
+    title="Gestionar capas"
+    type="button"
+  >
+    <!-- Icono de capas (stack) -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+      <path d="M11.99 18.54l-7.37-5.73L3 14.07l9 7 9-7-1.63-1.27-7.38 5.74zM12 16l7.36-5.73L21 9l-9-7-9 7 1.63 1.27L12 16z"/>
+    </svg>
+    <span *ngIf="capas.length > 0" class="badge">{{ capas.length }}</span>
+  </button>
+
+  <!-- Panel desplegable -->
+  <div class="panel" *ngIf="abierto">
+    <p class="panel-titulo">Capas GeoServer</p>
+
+    <p class="vacio" *ngIf="capas.length === 0">Sin capas disponibles</p>
+
+    <ul>
+      <li
+        *ngFor="let estado of capas; trackBy: trackByCapa"
+        (click)="toggleCapa(estado)"
+        [class.visible]="estado.visible"
+      >
+        <!-- Toggle switch -->
+        <span class="switch" [class.on]="estado.visible">
+          <span class="thumb"></span>
+        </span>
+        <span class="nombre">{{ estado.capa.title }}</span>
+      </li>
+    </ul>
+  </div>
+
+</div>

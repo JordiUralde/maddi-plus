@@ -1,0 +1,183 @@
+.radio-info-panel {
+  width: 300px;
+  max-height: 460px;
+  background: #ffffff;
+  border-radius: 10px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  font-size: 13px;
+
+  // ── Cabecera ──────────────────────────────────────────
+  .panel-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 12px 8px;
+    border-bottom: 1px solid #eee;
+
+    .contenedor-info {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+
+      .fraccion-chip {
+        display: inline-block;
+        color: #fff;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 8px;
+        border-radius: 12px;
+        align-self: flex-start;
+      }
+
+      .direccion {
+        font-size: 12px;
+        color: #555;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 218px;
+      }
+    }
+
+    .close-btn {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: #888;
+      font-size: 16px;
+      line-height: 1;
+      padding: 2px 5px;
+      border-radius: 4px;
+      flex-shrink: 0;
+
+      &:hover {
+        background: #f0f0f0;
+        color: #333;
+      }
+    }
+  }
+
+  // ── Slider de radio ───────────────────────────────────
+  .radio-control {
+    padding: 10px 12px;
+    border-bottom: 1px solid #eee;
+
+    label {
+      display: block;
+      font-size: 11px;
+      font-weight: 600;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+      margin-bottom: 6px;
+    }
+
+    .slider-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      input[type='range'] {
+        flex: 1;
+        accent-color: var(--maddi-green, #72c041);
+        cursor: pointer;
+      }
+
+      .radio-value {
+        font-weight: 700;
+        color: var(--maddi-green-dark, #5a9e32);
+        min-width: 52px;
+        text-align: right;
+        font-size: 13px;
+      }
+    }
+  }
+
+  // ── Encabezado resultados ─────────────────────────────
+  .resultados-header {
+    padding: 6px 12px 2px;
+    font-size: 12px;
+    font-weight: 600;
+    color: #444;
+
+    .cargando-text { color: #999; }
+  }
+
+  // ── Lista de portales ─────────────────────────────────
+  .portal-lista {
+    overflow-y: auto;
+    flex: 1;
+    padding: 4px 12px 12px;
+
+    .spinner-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 24px 0;
+    }
+
+    .spinner {
+      width: 24px;
+      height: 24px;
+      border: 3px solid #e0e0e0;
+      border-top-color: var(--maddi-green, #72c041);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .empty {
+      color: #999;
+      text-align: center;
+      padding: 20px 0;
+      font-size: 12px;
+      margin: 0;
+    }
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .portal-item {
+      background: #f7f9f5;
+      border-radius: 6px;
+      padding: 7px 10px;
+      border: 1px solid #e8ede4;
+
+      .prop-row {
+        display: flex;
+        gap: 6px;
+        font-size: 12px;
+        line-height: 1.4;
+
+        .prop-key {
+          color: #888;
+          font-weight: 500;
+          min-width: 80px;
+          flex-shrink: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .prop-val {
+          color: #333;
+          flex: 1;
+          word-break: break-word;
+        }
+      }
+    }
+  }
+}

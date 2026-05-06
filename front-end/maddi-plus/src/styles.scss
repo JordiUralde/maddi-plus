@@ -1,0 +1,31 @@
+/* Global styles - Maddi theme */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --maddi-green:       #72c041;
+  --maddi-green-dark:  #5a9e32;
+  --maddi-green-light: #eaf5e0;
+  --maddi-white:       #ffffff;
+  --maddi-gray:        #f4f6f3;
+  --maddi-text:        #2c2c2c;
+}
+
+html,
+body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Segoe UI', Arial, sans-serif;
+  color: var(--maddi-text);
+  background: var(--maddi-gray);
+}
+
+app-root {
+  display: block;
+  height: 100%;
+  width: 100%;
+}

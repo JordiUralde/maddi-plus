@@ -1,0 +1,53 @@
+<div class="visor-wrapper">
+
+  <!-- Contenedor del mapa -->
+  <div class="mapa-container">
+    <div *ngIf="error" class="estado-overlay error">{{ error }}</div>
+    <div #mapContainer class="ol-map"></div>
+
+    <!-- Buscador (top-left) -->
+    <div class="buscador-overlay">
+      <app-buscador
+        [coordsCapturadas]="coordsCapturadas"
+        (iniciarCapturaMapa)="onIniciarCapturaMapa()"
+        (resultadosObtenidos)="onResultadosBusqueda($event)"
+        (zoomAContenedor)="onZoomAContenedor($event)"
+        (limpiarResultados)="onLimpiarResultados()"
+      />
+    </div>
+
+    <!-- Controles flotantes (top-right) -->
+    <div class="selector-overlay">
+      <app-capa-selector
+        [capas]="capas"
+        (visibilidadCambiada)="onVisibilidadCambiada($event)"
+      />
+      <app-mapa-selector
+        [mapasFondo]="mapasFondo"
+        [mapaActivo]="mapaActivo"
+        (mapaSeleccionado)="seleccionarMapa($event)"
+      />
+    </div>
+
+    <!-- Panel de edificios cercanos (bottom-left) -->
+    <div class="radio-info-overlay" *ngIf="infoContenedor">
+      <app-radio-info
+        [contenedor]="infoContenedor"
+        [portales]="portales"
+        [radio]="radioInfo"
+        [cargando]="cargandoPortales"
+        (radioCirculoCambiado)="onRadioCirculoCambiado($event)"
+        (radioCambiado)="onRadioCambiado($event)"
+        (cerrado)="onCerrarInfo()"
+      />
+    </div>
+
+    <!-- Logo (bottom-right) -->
+    <div class="logo-overlay">
+      <a href="https://www.estudiosgis.com/" target="_blank" rel="noopener noreferrer">
+        <img src="assets/images/logo-egis-blanco.png" alt="Estudios GIS" />
+      </a>
+    </div>
+  </div>
+
+</div>

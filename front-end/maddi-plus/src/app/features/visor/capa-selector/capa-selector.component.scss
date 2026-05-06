@@ -1,0 +1,160 @@
+// ── Variables ─────────────────────────────────────────────
+$maddi-green:       #72c041;
+$maddi-green-dark:  #5a9e32;
+$maddi-green-light: #eaf5e0;
+$shadow:            0 4px 16px rgba(0, 0, 0, 0.18);
+
+:host {
+  position: relative;
+  display: block;
+}
+
+// ── Botón circular ────────────────────────────────────────
+.toggle-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: $maddi-green;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: $shadow;
+  transition: background 0.2s, transform 0.15s;
+  position: relative;
+
+  &:hover {
+    background: $maddi-green-dark;
+    transform: scale(1.07);
+  }
+
+  &.activo {
+    background: $maddi-green-dark;
+    box-shadow: 0 0 0 3px rgba(114, 192, 65, 0.35);
+  }
+
+  .badge {
+    position: absolute;
+    top: -4px;
+    right: -4px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #fff;
+    color: $maddi-green-dark;
+    font-size: 0.65rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1.5px solid $maddi-green;
+  }
+}
+
+// ── Panel desplegable ─────────────────────────────────────
+.panel {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 240px;
+  background: #fff;
+  border-radius: 10px;
+  box-shadow: $shadow;
+  padding: 10px 0 6px;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease;
+
+  .panel-titulo {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $maddi-green-dark;
+    padding: 0 14px 8px;
+    border-bottom: 1px solid #e5e5e5;
+    margin: 0 0 6px;
+  }
+
+  .vacio {
+    font-size: 0.82rem;
+    color: #999;
+    padding: 10px 14px;
+  }
+
+  ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 320px;
+    overflow-y: auto;
+  }
+
+  li {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 9px 14px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border-radius: 6px;
+    margin: 0 4px;
+    user-select: none;
+
+    &:hover {
+      background: $maddi-green-light;
+    }
+
+    &.visible .nombre {
+      color: #222;
+      font-weight: 500;
+    }
+  }
+
+  .nombre {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #888;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    transition: color 0.15s;
+  }
+}
+
+// ── Toggle switch ─────────────────────────────────────────
+.switch {
+  flex-shrink: 0;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: #ccc;
+  position: relative;
+  transition: background 0.2s;
+
+  .thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #fff;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.25);
+    transition: transform 0.2s;
+  }
+
+  &.on {
+    background: $maddi-green;
+
+    .thumb {
+      transform: translateX(14px);
+    }
+  }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}

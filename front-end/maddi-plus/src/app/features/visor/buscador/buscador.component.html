@@ -1,0 +1,147 @@
+<div class="buscador-wrapper">
+
+  <!-- Botón circular -->
+  <button
+    class="toggle-btn"
+    (click)="togglePanel()"
+    [class.activo]="abierto"
+    [class.esperando]="esperandoCoordenadas"
+    [title]="esperandoCoordenadas ? 'Haz clic en el mapa para elegir un punto' : 'Buscar contenedores'"
+    type="button"
+  >
+    <!-- Icono búsqueda -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="20" height="20">
+      <path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+    </svg>
+    <span *ngIf="resultados.length > 0" class="badge">{{ resultados.length }}</span>
+  </button>
+
+  <!-- Panel -->
+  <div class="panel" *ngIf="abierto">
+
+    <!-- Aviso de captura activa -->
+    <div class="captura-aviso" *ngIf="esperandoCoordenadas">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="16" height="16">
+        <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+      </svg>
+      Haz clic en el mapa para capturar el punto
+    </div>
+
+    <!-- Tabs de tipo -->
+    <div class="tipo-tabs">
+      <button
+        *ngFor="let t of tipos"
+        type="button"
+        [class.activo]="tipo === t.value"
+        (click)="cambiarTipo(t.value)"
+      >{{ t.label }}</button>
+    </div>
+
+    <!-- Formulario -->
+    <div class="form-area">
+
+      <!-- Texto: barrio, calle, refcat -->
+      <input
+        *ngIf="tipo === 'barrio' || tipo === 'calle' || tipo === 'refcat'"
+        type="text"
+        [(ngModel)]="textoBusqueda"
+        [placeholder]="tipo === 'barrio' ? 'Nombre del barrio…' :
+                       tipo === 'calle'  ? 'Nombre de la calle…' :
+                                           'Referencia catastral…'"
+        class="input-texto"
+        (keyup.enter)="buscar()"
+      />
+
+      <!-- Número: punto de recogida -->
+      <input
+        *ngIf="tipo === 'punto_recogida'"
+        type="number"
+        [(ngModel)]="numeroBusqueda"
+        placeholder="Número de punto…"
+        min="1"
+        class="input-texto"
+        (keyup.enter)="buscar()"
+      />
+
+      <!-- Coordenadas: capturar desde mapa -->
+      <div *ngIf="tipo === 'coordenadas'" class="coord-area">
+        <button
+          type="button"
+          class="btn-capturar"
+          [class.esperando]="esperandoCoordenadas"
+          (click)="activarCapturaMapa()"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="14" height="14">
+            <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
+          </svg>
+          {{ esperandoCoordenadas ? 'Haz clic en el mapa…' : 'Capturar punto del mapa' }}
+        </button>
+        <p class="coord-info" *ngIf="lon !== null && lat !== null">
+          📍 {{ lon | number:'1.5-5' }}, {{ lat | number:'1.5-5' }}
+        </p>
+      </div>
+
+      <!-- Slider de radio: para coordenadas y refcat -->
+      <div *ngIf="tipo === 'coordenadas' || tipo === 'refcat'" class="radio-row">
+        <label>Radio</label>
+        <input type="range" [(ngModel)]="radio" min="10" max="500" step="10" />
+        <span class="radio-val">{{ radio }} m</span>
+      </div>
+
+      <!-- Acciones -->
+      <div class="acciones">
+        <button
+          type="button"
+          class="btn-buscar"
+          [disabled]="!puedesBuscar || cargando"
+          (click)="buscar()"
+        >
+          {{ cargando ? 'Buscando…' : 'Buscar' }}
+        </button>
+        <button
+          *ngIf="resultados.length > 0"
+          type="button"
+          class="btn-limpiar"
+          (click)="limpiar()"
+          title="Limpiar resultados"
+        >✕</button>
+      </div>
+
+      <p class="error-msg" *ngIf="error">{{ error }}</p>
+    </div>
+
+    <!-- Resultados -->
+    <ng-container *ngIf="!cargando">
+      <div class="resultados-header" *ngIf="resultados.length > 0 || error">
+        <span *ngIf="!error">{{ resultados.length }} resultado{{ resultados.length !== 1 ? 's' : '' }}</span>
+      </div>
+
+      <p class="sin-resultados" *ngIf="resultados.length === 0 && !error && !cargando && textoBusqueda">
+        Sin resultados para esta búsqueda.
+      </p>
+
+      <ul class="resultado-lista" *ngIf="resultados.length > 0">
+        <li
+          *ngFor="let r of resultados"
+          class="resultado-item"
+          (click)="irAContenedor(r)"
+          title="Centrar en el mapa"
+        >
+          <span class="fraccion-chip" [style.background]="colorFraccion(r.props.fraccion)">
+            {{ r.props.fraccion }}
+          </span>
+          <span class="dir">{{ r.props.direccion }}</span>
+          <span class="barrio">{{ r.props.barrio }}</span>
+          <span class="punto">Punto {{ r.props.punto_recogida }}</span>
+        </li>
+      </ul>
+    </ng-container>
+
+    <!-- Spinner -->
+    <div class="spinner-wrap" *ngIf="cargando">
+      <div class="spinner"></div>
+    </div>
+
+  </div>
+
+</div>

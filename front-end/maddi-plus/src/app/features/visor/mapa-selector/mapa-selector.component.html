@@ -1,0 +1,48 @@
+<div class="selector-wrapper">
+
+  <!-- Botón circular -->
+  <button
+    class="toggle-btn"
+    (click)="togglePanel()"
+    [class.activo]="abierto"
+    title="Cambiar mapa de fondo"
+    type="button"
+  >
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" width="22" height="22">
+      <path d="M20.5 3l-.16.03L15 5.1 9 3 3.36 4.9c-.21.07-.36.25-.36.48V20.5c0 .28.22.5.5.5l.16-.03L9 18.9l6 2.1 5.64-1.9c.21-.07.36-.25.36-.48V3.5c0-.28-.22-.5-.5-.5zM15 19l-6-2.11V5l6 2.11V19z"/>
+    </svg>
+  </button>
+
+  <!-- Panel desplegable -->
+  <div class="panel" *ngIf="abierto">
+    <p class="panel-titulo">Mapa de fondo</p>
+    <ul>
+      <li
+        *ngFor="let mapa of mapasFondo"
+        [class.activo]="mapa.id === mapaActivo?.id"
+        (click)="seleccionar(mapa)"
+      >
+        <img
+          *ngIf="mapa.previsualizacion"
+          [src]="mapa.previsualizacion"
+          [alt]="mapa.nombre"
+          class="preview"
+        />
+        <div *ngIf="!mapa.previsualizacion" class="preview-placeholder"></div>
+        <span class="nombre">{{ mapa.nombre }}</span>
+        <svg
+          *ngIf="mapa.id === mapaActivo?.id"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="currentColor"
+          class="check-icon"
+          width="16"
+          height="16"
+        >
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+      </li>
+    </ul>
+  </div>
+
+</div>

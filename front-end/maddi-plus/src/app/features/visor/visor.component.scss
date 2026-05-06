@@ -1,0 +1,92 @@
+@use 'ol/ol.css' as *;
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.visor-wrapper {
+  display: flex;
+  width: 100%;
+  height: 100%;
+}
+
+// -- Mapa -------------------------------------------------
+.mapa-container {
+  flex: 1;
+  position: relative;
+
+  .ol-map {
+    width: 100%;
+    height: 100%;
+  }
+
+  .estado-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    color: #333;
+
+    &.error {
+      color: #c0392b;
+      background: rgba(255, 235, 235, 0.9);
+    }
+  }
+
+  // -- Selector overlay (esquina superior derecha) -----
+  .selector-overlay {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    z-index: 500;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  // -- Buscador overlay (esquina superior izquierda) ----
+  .buscador-overlay {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    z-index: 500;
+  }
+
+  // -- Radio info overlay (esquina inferior izquierda) --
+  .radio-info-overlay {
+    position: absolute;
+    bottom: 16px;
+    left: 16px;
+    z-index: 500;
+  }
+
+  // -- Logo overlay (esquina inferior derecha) ----------
+  .logo-overlay {
+    position: absolute;
+    bottom: 16px;
+    right: 16px;
+    z-index: 500;
+
+    a {
+      display: block;
+      line-height: 0;
+    }
+
+    img {
+      height: 30px;
+      width: auto;
+      opacity: 0.85;
+      transition: opacity 0.2s ease;
+
+      &:hover {
+        opacity: 1;
+      }
+    }
+  }
+}

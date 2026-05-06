@@ -1,0 +1,264 @@
+import https from 'https';
+import http from 'http';
+import { pool } from '../config/db';
+import { Contenedor } from '../models/contenedor.model';
+import { env } from '../config/env';
+
+const SELECT_CONTENEDOR = `
+  SELECT matricula, distrito, seccion, barrio, punto_recogida,
+         direccion, x, y, fraccion, seccion_censal, arquitectura, certificado
+  FROM contenedores`;
+
+function fetchText(url: string): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const client = url.startsWith('https') ? https : http;
+    client.get(url, (res) => {
+      let data = '';
+      res.on('data', (chunk) => (data += chunk));
+      res.on('end', () => resolve(data));
+      res.on('error', reject);
+    }).on('error', reject);
+  });
+}
+
+function rowsToFeatureCollection(rows: Contenedor[]): GeoJSONFeatureCollection {
+  return {
+    type: 'FeatureCollection',
+    features: rows.map((c) => ({
+      type: 'Feature',
+      geometry: { type: 'Point', coordinates: [Number(c.y), Number(c.x)] },
+      properties: {
+        matricula: c.matricula,
+        direccion: c.direccion,
+        fraccion: c.fraccion,
+        barrio: c.barrio,
+        distrito: c.distrito,
+        punto_recogida: c.punto_recogida,
+      },
+    })),
+  };
+}
+
+interface GeoJSONFeatureCollection {
+  type: 'FeatureCollection';
+  features: GeoJSONFeature[];
+}
+
+interface GeoJSONFeature {
+  type: 'Feature';
+  geometry: unknown;
+  properties: Record<string, unknown>;
+}
+
+/**
+ * Carga todos los contenedores directamente desde GeoServer WFS (capa publicada desde QGIS).
+ * Si GeoServer no está disponible o devuelve un error, cae al fallback de base de datos.
+ */
+export async function findAllContenedores(): Promise<GeoJSONFeatureCollection> {
+  try {
+    return await findAllContenedoresFromWFS();
+  } catch (err) {
+    console.warn('[contenedor.repository] WFS no disponible, usando base de datos:', (err as Error).message);
+    return findAllContenedoresFromDB();
+  }
+}
+
+async function findAllContenedoresFromWFS(): Promise<GeoJSONFeatureCollection> {
+  const wfsUrl = `${env.geoserver.url}/wfs`;
+  const params = new URLSearchParams({
+    SERVICE: 'WFS',
+    VERSION: '1.1.0',
+    REQUEST: 'GetFeature',
+    TYPENAME: `${env.geoserver.workspace}:capa_contenedores`,
+    outputFormat: 'application/json',
+    srsName: 'CRS:84',  // CRS:84 siempre devuelve lon/lat, evita el swap de WFS 1.1.0 con EPSG:4326
+  });
+
+  const text = await fetchText(`${wfsUrl}?${params.toString()}`);
+
+  if (text.trimStart().startsWith('<')) {
+    throw new Error(`GeoServer WFS devolvió XML:\n${text.slice(0, 400)}`);
+  }
+
+  const raw = JSON.parse(text) as {
+    type: string;
+    features: Array<{
+      type: string;
+      geometry: { type: string; coordinates: number[] };
+      properties: Record<string, unknown>;
+    }>;
+  };
+
+
+  return {
+    type: 'FeatureCollection',
+    features: (raw.features ?? []).map((f) => {
+      const p = f.properties;
+      return {
+        type: 'Feature',
+        geometry: f.geometry,
+        properties: {
+          matricula:      p['Matricula']  ?? p['matricula']  ?? null,
+          direccion:      p['Dirección']  ?? p['Direccion']  ?? p['direccion']  ?? null,
+          fraccion:       p['Fracción']   ?? p['Fraccion']   ?? p['fraccion']   ?? null,
+          barrio:         p['BARRIO']     ?? p['Barrio']     ?? p['barrio']     ?? null,
+          distrito:       p['DISTRITO']   ?? p['Distrito']   ?? p['distrito']   ?? null,
+          punto_recogida: p['Punto_Reco'] ?? p['punto_recogida'] ?? null,
+        },
+      };
+    }),
+  };
+}
+
+async function findAllContenedoresFromDB(): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `SELECT matricula, distrito, seccion, barrio, punto_recogida,
+            direccion, x, y, fraccion, seccion_censal, arquitectura, certificado
+     FROM contenedores
+     ORDER BY matricula`
+  );
+  return rowsToFeatureCollection(rows);
+}
+
+export async function findParcelasByRadio(
+  lon: number,
+  lat: number,
+  radio: number
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query(
+    `SELECT
+       p.id,
+       p."PARCELA",
+       p."REFCAT",
+       p."MASA",
+       p."AREA",
+       p."TIPO",
+       ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry
+     FROM capa_parcelas p
+     WHERE ST_DWithin(
+       p.geom,
+       ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 25830),
+       $3
+     )`,
+    [lon, lat, radio]
+  );
+
+  return {
+    type: 'FeatureCollection',
+    features: rows.map((r) => ({
+      type: 'Feature',
+      geometry: JSON.parse(r.geometry as string),
+      properties: {
+        id: r.id,
+        parcela: r['PARCELA'],
+        refcat: r['REFCAT'],
+        masa: r['MASA'],
+        area: r['AREA'],
+        tipo: r['TIPO'],
+      },
+    })),
+  };
+}
+
+export async function findPortalesByRadio(
+  lon: number,
+  lat: number,
+  radio: number
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query(
+    `SELECT
+       ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
+       (SELECT json_object_agg(k, v)
+        FROM json_each(row_to_json(p)) AS t(k, v)
+        WHERE k != 'geom') AS properties
+     FROM capa_portales p
+     WHERE ST_DWithin(
+       p.geom,
+       ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 25830),
+       $3
+     )`,
+    [lon, lat, radio]
+  );
+
+  return {
+    type: 'FeatureCollection',
+    features: rows.map((r) => ({
+      type: 'Feature',
+      geometry: JSON.parse(r.geometry as string),
+      properties: r.properties as Record<string, unknown>,
+    })),
+  };
+}
+
+// ── Búsqueda de contenedores ────────────────────────────────────
+
+export async function findContenedoresByBarrio(
+  barrio: string
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `${SELECT_CONTENEDOR} WHERE LOWER(barrio) LIKE LOWER($1) ORDER BY barrio, direccion`,
+    [`%${barrio}%`]
+  );
+  return rowsToFeatureCollection(rows);
+}
+
+export async function findContenedoresByCalle(
+  calle: string
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `${SELECT_CONTENEDOR} WHERE LOWER(direccion) LIKE LOWER($1) ORDER BY direccion`,
+    [`%${calle}%`]
+  );
+  return rowsToFeatureCollection(rows);
+}
+
+export async function findContenedoresByPuntoRecogida(
+  punto: number
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `${SELECT_CONTENEDOR} WHERE punto_recogida = $1 ORDER BY matricula`,
+    [punto]
+  );
+  return rowsToFeatureCollection(rows);
+}
+
+export async function findContenedoresByRadio(
+  lon: number,
+  lat: number,
+  radio: number
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `${SELECT_CONTENEDOR}
+     WHERE ST_DWithin(
+       ST_Transform(ST_SetSRID(ST_MakePoint(y::float, x::float), 4326), 25830),
+       ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 25830),
+       $3
+     )
+     ORDER BY matricula`,
+    [lon, lat, radio]
+  );
+  return rowsToFeatureCollection(rows);
+}
+
+export async function findContenedoresByRefcat(
+  refcat: string,
+  radio: number
+): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `WITH parcela AS (
+       SELECT ST_Transform(ST_Centroid(geom), 4326) AS centroid
+       FROM capa_parcelas
+       WHERE UPPER("REFCAT") = UPPER($1)
+       LIMIT 1
+     )
+     ${SELECT_CONTENEDOR}, parcela
+     WHERE ST_DWithin(
+       ST_Transform(ST_SetSRID(ST_MakePoint(contenedores.y::float, contenedores.x::float), 4326), 25830),
+       ST_Transform(parcela.centroid, 25830),
+       $2
+     )
+     ORDER BY contenedores.matricula`,
+    [refcat, radio]
+  );
+  return rowsToFeatureCollection(rows);
+}

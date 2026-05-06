@@ -1,0 +1,127 @@
+# ============================================================
+# DEPENDENCIAS
+# ============================================================
+**/node_modules/
+**/.pnp
+**/.pnp.js
+
+# Lock files (descomentar si se quiere ignorar)
+# **/package-lock.json
+# **/yarn.lock
+# **/pnpm-lock.yaml
+
+# ============================================================
+# VARIABLES DE ENTORNO Y SECRETOS — NUNCA SUBIR AL REPO
+# ============================================================
+**/.env
+**/.env.*
+!**/.env.example
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.cer
+**/*.crt
+**/secrets/
+**/credentials/
+
+# ============================================================
+# BUILD / COMPILACION
+# ============================================================
+# Backend
+back-end/dist/
+back-end/*.tsbuildinfo
+
+# Frontend Angular
+front-end/**/dist/
+front-end/**/.angular/
+front-end/**/out-tsc/
+front-end/**/.ng/
+front-end/**/tmp/
+front-end/**/coverage/
+front-end/**/e2e/test-output/
+
+# ============================================================
+# LOGS
+# ============================================================
+**/logs/
+**/*.log
+**/npm-debug.log*
+**/yarn-debug.log*
+**/yarn-error.log*
+**/lerna-debug.log*
+**/.pnpm-debug.log*
+
+# ============================================================
+# SISTEMA OPERATIVO
+# ============================================================
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+*.lnk
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
+
+# Linux
+*~
+
+# ============================================================
+# EDITORES E IDEs
+# ============================================================
+# VS Code (mantener solo configuracion compartida si se desea)
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+!.vscode/launch.json
+!.vscode/tasks.json
+
+# JetBrains (IntelliJ, WebStorm, etc.)
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Vim / Emacs
+*.swp
+*.swo
+*~
+\#*\#
+/.emacs.desktop
+/.emacs.desktop.lock
+
+# ============================================================
+# TESTS Y COBERTURA
+# ============================================================
+**/coverage/
+**/.nyc_output/
+**/test-results/
+**/playwright-report/
+**/cypress/screenshots/
+**/cypress/videos/
+
+# ============================================================
+# DOCKER (si aplica)
+# ============================================================
+# No ignorar Dockerfile ni docker-compose.yml por defecto,
+# pero sí archivos con secretos de override local
+**/docker-compose.override.yml
+**/.dockerignore
+
+# ============================================================
+# CACHE Y ARCHIVOS TEMPORALES
+# ============================================================
+**/.cache/
+**/.parcel-cache/
+**/.eslintcache
+**/.stylelintcache
+**/*.tsbuildinfo
+**/tmp/
+**/temp/
