@@ -66,6 +66,33 @@
     z-index: 500;
   }
 
+  .btn-logout {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 13px;
+    background: rgba(255, 255, 255, 0.92);
+    color: #c0392b;
+    border: 1.5px solid rgba(192, 57, 43, 0.35);
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.14);
+    backdrop-filter: blur(4px);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+
+    svg {
+      flex-shrink: 0;
+    }
+
+    &:hover {
+      background: #c0392b;
+      color: #fff;
+      border-color: #c0392b;
+    }
+  }
+
   // -- Logo overlay (esquina inferior derecha) ----------
   .logo-overlay {
     position: absolute;

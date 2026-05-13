@@ -10,7 +10,10 @@ import {
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { MapaSelectorComponent } from './mapa-selector/mapa-selector.component';
-import { CapaSelectorComponent, CapaEstado } from './capa-selector/capa-selector.component';
+import {
+  CapaSelectorComponent,
+  CapaEstado,
+} from './capa-selector/capa-selector.component';
 import { RadioInfoComponent } from './radio-info/radio-info.component';
 import { BuscadorComponent } from './buscador/buscador.component';
 import { VisorMapService } from '../../core/services/visor-map.service';
@@ -18,19 +21,30 @@ import { MapaFondoService } from '../../core/services/mapa-fondo.service';
 import { MapaFondo } from '../../core/models/mapa-fondo.model';
 import { GeoLayerService } from '../../core/services/geo-layer.service';
 import { ContenedorService } from '../../core/services/contenedor.service';
-import { ContenedorInfo, PortalFeature } from '../../core/models/contenedor.model';
+import {
+  ContenedorInfo,
+  PortalFeature,
+} from '../../core/models/contenedor.model';
+import { Router } from '@angular/router';
 
 @Component({
   selector: 'app-visor',
   standalone: true,
-  imports: [CommonModule, MapaSelectorComponent, CapaSelectorComponent, RadioInfoComponent, BuscadorComponent],
+  imports: [
+    CommonModule,
+    MapaSelectorComponent,
+    CapaSelectorComponent,
+    RadioInfoComponent,
+    BuscadorComponent,
+  ],
   templateUrl: './visor.component.html',
   styleUrl: './visor.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
   providers: [VisorMapService],
 })
 export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
-  @ViewChild('mapContainer', { static: true }) mapContainer!: ElementRef<HTMLDivElement>;
+  @ViewChild('mapContainer', { static: true })
+  mapContainer!: ElementRef<HTMLDivElement>;
 
   // ── Estado UI ─────────────────────────────────────────────────────────────
   mapasFondo: MapaFondo[] = [];
@@ -52,11 +66,12 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     private geoLayerService: GeoLayerService,
     private contenedorService: ContenedorService,
     private cdr: ChangeDetectorRef,
+    private router: Router,
   ) {}
 
   // ── Ciclo de vida Angular ─────────────────────────────────────────────────
 
-  ngOnInit(): void {
+  ngOnInit(): void {  
     this.cargarMapasFondo();
     this.cargarCapasWMS();
     this.cargarContenedores();
@@ -82,6 +97,11 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.mapService.destroy();
   }
 
+  logout(): void {
+    localStorage.removeItem('maddiplus-auth');
+    this.router.navigate(['/login']);
+  }
+
   // ── Handlers de eventos del template ─────────────────────────────────────
 
   seleccionarMapa(mapa: MapaFondo): void {
@@ -90,7 +110,9 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onVisibilidadCambiada(estado: CapaEstado): void {
-    this.capas = this.capas.map((c) => (c.capa.name === estado.capa.name ? estado : c));
+    this.capas = this.capas.map((c) =>
+      c.capa.name === estado.capa.name ? estado : c,
+    );
     this.mapService.setWmsLayerVisible(estado.capa.name, estado.visible);
     // Sincroniza la capa hit-test transparente con el toggle del WMS de QGIS.
     if (estado.capa.name === 'capa_contenedores') {
@@ -131,7 +153,9 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
-  onResultadosBusqueda(geojson: import('../../core/models/contenedor.model').ContenedorGeoJSON): void {
+  onResultadosBusqueda(
+    geojson: import('../../core/models/contenedor.model').ContenedorGeoJSON,
+  ): void {
     this.mapService.highlightResultados(geojson);
     this.mapService.zoomToResultados();
   }
@@ -169,7 +193,9 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.geoLayerService.getCapas().subscribe({
       next: (layers) => {
         this.capas = layers.map((capa) => ({ capa, visible: true }));
-        layers.forEach((capa) => this.mapService.addWmsLayer(capa.name, capa.wmsUrl, capa.zIndex));
+        layers.forEach((capa) =>
+          this.mapService.addWmsLayer(capa.name, capa.wmsUrl, capa.zIndex),
+        );
         this.cdr.markForCheck();
       },
     });

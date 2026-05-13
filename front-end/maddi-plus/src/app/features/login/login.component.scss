@@ -1,0 +1,136 @@
+$maddi-green:       #72c041;
+$maddi-green-dark:  #5a9e32;
+$maddi-green-light: #eaf5e0;
+$shadow:            0 4px 24px rgba(0, 0, 0, 0.18);
+
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.login-page {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--maddi-gray, #f4f6f3);
+}
+
+.login-card {
+  background: #fff;
+  border-radius: 14px;
+  box-shadow: $shadow;
+  padding: 40px 36px 36px;
+  width: 340px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+}
+
+.login-logo {
+  background: $maddi-green;
+  border-radius: 50%;
+  width: 68px;
+  height: 68px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 18px;
+  box-shadow: 0 2px 10px rgba(114, 192, 65, 0.4);
+
+  img {
+    width: 42px;
+    height: auto;
+  }
+}
+
+.login-title {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--maddi-text, #2c2c2c);
+  margin: 0 0 4px;
+  letter-spacing: 0.01em;
+}
+
+.login-subtitle {
+  font-size: 0.82rem;
+  color: #888;
+  margin: 0 0 28px;
+}
+
+.login-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: $maddi-green-dark;
+  }
+
+  input {
+    border: 1.5px solid #dde3d8;
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 0.92rem;
+    color: var(--maddi-text, #2c2c2c);
+    outline: none;
+    transition: border-color 0.2s;
+    background: var(--maddi-gray, #f4f6f3);
+
+    &::placeholder {
+      color: #bbb;
+    }
+
+    &:focus {
+      border-color: $maddi-green;
+      background: #fff;
+    }
+  }
+}
+
+.error-msg {
+  font-size: 0.82rem;
+  color: #c0392b;
+  background: #fdecea;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 0;
+}
+
+.btn-login {
+  margin-top: 4px;
+  width: 100%;
+  padding: 11px;
+  background: $maddi-green;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(114, 192, 65, 0.35);
+  transition: background 0.2s, transform 0.15s;
+
+  &:hover {
+    background: $maddi-green-dark;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
