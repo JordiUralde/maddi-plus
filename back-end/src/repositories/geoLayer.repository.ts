@@ -53,15 +53,21 @@ export async function getLayersFromGeoServer(): Promise<GeoLayerDto[]> {
         typeof (l as Record<string, unknown>)['Name'] === 'string'
     )
     .sort((a, b) => {
-      // capa_contenedores siempre aparece la primera
+      // capa_contenedores siempre aparece la primera (admite prefijo de workspace y typo histórico)
       const aName = String((a as Record<string, unknown>)['Name']);
       const bName = String((b as Record<string, unknown>)['Name']);
-      if (aName === 'capa_contenedores') return -1;
-      if (bName === 'capa_contenedores') return 1;
+      const aIsContenedores = aName === 'capa_contenedores' || aName.endsWith(':capa_contenedores') || aName === 'capa_contendores' || aName.endsWith(':capa_contendores');
+      const bIsContenedores = bName === 'capa_contenedores' || bName.endsWith(':capa_contenedores') || bName === 'capa_contendores' || bName.endsWith(':capa_contendores');
+      if (aIsContenedores) return -1;
+      if (bIsContenedores) return 1;
       return 0;
     });
 
-  return filteredLayers
+  // capa_contenedores sorted to index 0; other layers get indices 1..n-1.
+  // Ensure contenedores is always rendered above all other WMS layers (but below UI layers at 90+).
+  const contenedoresZIndex = Math.min(filteredLayers.length + 10, 88);
+
+  const result = filteredLayers
     .map((l, i) => {
       const rawName = String(l['Name']);
       const rawTitle = String(l['Title'] ?? rawName);
@@ -79,13 +85,20 @@ export async function getLayersFromGeoServer(): Promise<GeoLayerDto[]> {
             Number(bbox['@_maxy'] ?? bbox['maxy'] ?? 0),
           ]
         : undefined;
+      // Detecta contenedores: nombre canónico, con prefijo de workspace, o con el typo histórico de GeoServer ("contendores")
+      const isContenedores =
+        rawName === 'capa_contenedores' || rawName.endsWith(':capa_contenedores') ||
+        rawName === 'capa_contendores'  || rawName.endsWith(':capa_contendores');
       return {
         name: rawName,
         title: displayTitle,
-        wmsUrl,
-        // capa_contenedores siempre por encima del resto de capas WMS (pero debajo de los controles de interacción en 90+)
-        zIndex: rawName === 'capa_contenedores' ? 80 : 10 + i,
+        // Usar el proxy backend en lugar de la URL directa de GeoServer (puerto interno no accesible desde el navegador)
+        wmsUrl: 'api/wms-proxy',
+        // contenedores siempre por encima del resto de WMS; demás capas nunca superan su índice
+        zIndex: isContenedores ? contenedoresZIndex : Math.min(10 + i, contenedoresZIndex - 1),
         bbox: parsedBbox,
       };
     });
+
+  return result;
 }
