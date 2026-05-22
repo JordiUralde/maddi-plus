@@ -1,0 +1,42 @@
+<div class="vivienda-info-panel">
+
+  <!-- Cabecera -->
+  <div class="panel-header">
+    <div class="header-text">
+      <span class="panel-title">Viviendas</span>
+      <span class="portal-subtitulo" [title]="portalTitulo()">{{ portalTitulo() }}</span>
+    </div>
+    <button class="close-btn" type="button" title="Cerrar" (click)="cerrado.emit()">✕</button>
+  </div>
+
+  <!-- Cuerpo -->
+  <div class="vivienda-lista">
+
+    <div *ngIf="cargando" class="spinner-wrap">
+      <div class="spinner"></div>
+    </div>
+
+    <p *ngIf="!cargando && viviendas.length === 0" class="empty">
+      Sin viviendas asociadas a este portal.
+    </p>
+
+    <div *ngIf="!cargando && viviendas.length > 0" class="contador">
+      {{ viviendas.length }} vivienda{{ viviendas.length !== 1 ? 's' : '' }}
+    </div>
+
+    <div
+      *ngFor="let v of viviendas; let i = index"
+      class="vivienda-item"
+    >
+      <div class="vivienda-num">{{ i + 1 }}</div>
+      <div class="vivienda-props">
+        <div *ngFor="let prop of propiedades(v)" class="prop-row">
+          <span class="prop-key">{{ prop.k }}</span>
+          <span class="prop-val">{{ prop.v }}</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+</div>

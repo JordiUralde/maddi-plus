@@ -22,6 +22,9 @@
         [capas]="capas"
         (visibilidadCambiada)="onVisibilidadCambiada($event)"
       />
+      <app-leyenda
+        [capas]="capas"
+      />
       <app-mapa-selector
         [mapasFondo]="mapasFondo"
         [mapaActivo]="mapaActivo"
@@ -37,16 +40,25 @@
       </button>
     </div>
 
-    <!-- Panel de edificios cercanos (bottom-left) -->
-    <div class="radio-info-overlay" *ngIf="infoContenedor">
+    <!-- Paneles inferiores: portales + viviendas (bottom-left) -->
+    <div class="paneles-inferiores" *ngIf="infoContenedor">
       <app-radio-info
         [contenedor]="infoContenedor"
         [portales]="portales"
         [radio]="radioInfo"
         [cargando]="cargandoPortales"
+        [portalActivoId]="portalActivoId"
         (radioCirculoCambiado)="onRadioCirculoCambiado($event)"
         (radioCambiado)="onRadioCambiado($event)"
         (cerrado)="onCerrarInfo()"
+        (portalSeleccionado)="onPortalSeleccionado($event)"
+      />
+      <app-vivienda-info
+        *ngIf="portalActivoId !== null"
+        [viviendas]="viviendas"
+        [cargando]="cargandoViviendas"
+        [portalProps]="portalActivoProps"
+        (cerrado)="onCerrarViviendas()"
       />
     </div>
 

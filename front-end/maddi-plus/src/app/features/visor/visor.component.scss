@@ -58,12 +58,16 @@
     z-index: 500;
   }
 
-  // -- Radio info overlay (esquina inferior izquierda) --
-  .radio-info-overlay {
+  // -- Paneles inferiores: portales + viviendas (bottom-left) --
+  .paneles-inferiores {
     position: absolute;
     bottom: 16px;
     left: 16px;
     z-index: 500;
+    display: flex;
+    flex-direction: row;
+    align-items: flex-end;
+    gap: 12px;
   }
 
   .btn-logout {

@@ -14,7 +14,9 @@ import {
   CapaSelectorComponent,
   CapaEstado,
 } from './capa-selector/capa-selector.component';
+import { LeyendaComponent } from './leyenda/leyenda.component';
 import { RadioInfoComponent } from './radio-info/radio-info.component';
+import { ViviendaInfoComponent } from './vivienda-info/vivienda-info.component';
 import { BuscadorComponent } from './buscador/buscador.component';
 import { VisorMapService } from '../../core/services/visor-map.service';
 import { MapaFondoService } from '../../core/services/mapa-fondo.service';
@@ -24,6 +26,7 @@ import { ContenedorService } from '../../core/services/contenedor.service';
 import {
   ContenedorInfo,
   PortalFeature,
+  ViviendaRecord,
 } from '../../core/models/contenedor.model';
 import { Router } from '@angular/router';
 
@@ -34,7 +37,9 @@ import { Router } from '@angular/router';
     CommonModule,
     MapaSelectorComponent,
     CapaSelectorComponent,
+    LeyendaComponent,
     RadioInfoComponent,
+    ViviendaInfoComponent,
     BuscadorComponent,
   ],
   templateUrl: './visor.component.html',
@@ -57,6 +62,11 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   portales: PortalFeature[] = [];
   radioInfo = 100;
   cargandoPortales = false;
+
+  portalActivoId: number | null = null;
+  portalActivoProps: Record<string, unknown> | null = null;
+  viviendas: ViviendaRecord[] = [];
+  cargandoViviendas = false;
 
   coordsCapturadas: [number, number] | null = null;
 
@@ -141,7 +151,42 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onCerrarInfo(): void {
     this.infoContenedor = null;
+    this.portalActivoId = null;
+    this.portalActivoProps = null;
+    this.viviendas = [];
     this.mapService.clearSeleccion();
+  }
+
+  onPortalSeleccionado(event: { id: number; props: Record<string, unknown> }): void {
+    if (this.portalActivoId === event.id) {
+      this.portalActivoId = null;
+      this.portalActivoProps = null;
+      this.viviendas = [];
+      return;
+    }
+    this.portalActivoId = event.id;
+    this.portalActivoProps = event.props;
+    this.viviendas = [];
+    this.cargandoViviendas = true;
+    this.cdr.markForCheck();
+    this.contenedorService.getViviendas(event.id).subscribe({
+      next: (viviendas) => {
+        this.viviendas = viviendas;
+        this.cargandoViviendas = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.viviendas = [];
+        this.cargandoViviendas = false;
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  onCerrarViviendas(): void {
+    this.portalActivoId = null;
+    this.portalActivoProps = null;
+    this.viviendas = [];
   }
 
   // ── Buscador ─────────────────────────────────────────────────────────
@@ -209,6 +254,9 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   private buscarPortales(lon: number, lat: number, radio: number): void {
     this.cargandoPortales = true;
+    this.portalActivoId = null;
+    this.portalActivoProps = null;
+    this.viviendas = [];
     this.cdr.markForCheck();
     this.contenedorService.getPortales(lon, lat, radio).subscribe({
       next: (geojson) => {

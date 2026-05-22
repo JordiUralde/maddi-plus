@@ -155,6 +155,19 @@
       border-radius: 6px;
       padding: 7px 10px;
       border: 1px solid #e8ede4;
+      cursor: pointer;
+      user-select: none;
+      transition: background 0.15s;
+
+      &:hover {
+        background: #eef3ea;
+        border-color: #c8dbbe;
+      }
+
+      &.activo {
+        background: #e6f0df;
+        border-color: #72c041;
+      }
 
       .prop-row {
         display: flex;
@@ -177,6 +190,15 @@
           flex: 1;
           word-break: break-word;
         }
+      }
+
+      .viviendas-hint {
+        display: block;
+        margin-top: 5px;
+        font-size: 11px;
+        color: var(--maddi-green-dark, #5a9e32);
+        font-weight: 600;
+        text-align: right;
       }
     }
   }

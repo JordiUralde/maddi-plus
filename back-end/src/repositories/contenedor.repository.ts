@@ -57,8 +57,7 @@ interface GeoJSONFeature {
 export async function findAllContenedores(): Promise<GeoJSONFeatureCollection> {
   try {
     return await findAllContenedoresFromWFS();
-  } catch (err) {
-    console.warn('[contenedor.repository] WFS no disponible, usando base de datos:', (err as Error).message);
+  } catch {
     return findAllContenedoresFromDB();
   }
 }
@@ -168,15 +167,28 @@ export async function findPortalesByRadio(
   const { rows } = await pool.query(
     `SELECT
        ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
-       (SELECT json_object_agg(k, v)
-        FROM json_each(row_to_json(p)) AS t(k, v)
-        WHERE k != 'geom') AS properties
+       json_build_object(
+         'id',     p.id,
+         'numero', p."ROTULO",
+         'calle',  (
+           SELECT string_agg(rotulo, ' ' ORDER BY min_x)
+           FROM (
+             SELECT "ROTULO" AS rotulo,
+                    MIN(ST_X(ST_Centroid(geom))) AS min_x
+             FROM capa_portales
+             WHERE "VIA" = p."VIA"
+               AND ("PCAT2" IS NULL OR TRIM("PCAT2") = '')
+             GROUP BY "ROTULO"
+           ) seg
+         )
+       ) AS properties
      FROM capa_portales p
      WHERE ST_DWithin(
        p.geom,
        ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 25830),
        $3
-     )`,
+     )
+     AND p."PCAT2" IS NOT NULL AND TRIM(p."PCAT2") != ''`,
     [lon, lat, radio]
   );
 
@@ -188,6 +200,29 @@ export async function findPortalesByRadio(
       properties: r.properties as Record<string, unknown>,
     })),
   };
+}
+
+export async function findViviendasByPortalId(
+  portalId: number
+): Promise<Record<string, unknown>[]> {
+  const portalResult = await pool.query<{ codigo: string }>(
+    `SELECT "PCAT1" || "PCAT2" AS codigo FROM capa_portales WHERE id = $1 LIMIT 1`,
+    [portalId]
+  );
+
+  if (portalResult.rows.length === 0) return [];
+
+  const codigo = portalResult.rows[0].codigo;
+
+  const { rows } = await pool.query(
+    `SELECT (row_to_json(v)::jsonb - 'geom') AS vivienda
+     FROM viviendas v
+     WHERE v."31_pc" = $1
+     ORDER BY v."31_pc"`,
+    [codigo]
+  );
+
+  return rows.map((r) => r.vivienda as Record<string, unknown>);
 }
 
 // ── Búsqueda de contenedores ────────────────────────────────────

@@ -3,6 +3,7 @@ import {
   findAllContenedores,
   findParcelasByRadio,
   findPortalesByRadio,
+  findViviendasByPortalId,
   findContenedoresByBarrio,
   findContenedoresByCalle,
   findContenedoresByPuntoRecogida,
@@ -70,6 +71,24 @@ export async function getPortalesByContenedor(
 
     const geojson = await findPortalesByRadio(lon, lat, radio);
     res.status(200).json(geojson);
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getViviendasByPortal(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const portalId = parseInt(req.params['portalId'], 10);
+    if (isNaN(portalId) || portalId < 1) {
+      res.status(400).json({ message: 'ID de portal inválido' });
+      return;
+    }
+    const viviendas = await findViviendasByPortalId(portalId);
+    res.status(200).json(viviendas);
   } catch (err) {
     next(err);
   }

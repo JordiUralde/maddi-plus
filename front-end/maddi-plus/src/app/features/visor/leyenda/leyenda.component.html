@@ -1,0 +1,49 @@
+<div class="selector-wrapper">
+
+  <!-- Botón circular -->
+  <button
+    class="toggle-btn"
+    (click)="togglePanel()"
+    [class.activo]="abierto"
+    title="Leyenda de capas"
+    type="button"
+  >
+    <!-- Icono leyenda (lista con símbolo) -->
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none"
+         stroke="currentColor" stroke-width="2" stroke-linecap="round"
+         stroke-linejoin="round" width="20" height="20">
+      <rect x="3" y="3" width="5" height="5" rx="1" fill="currentColor" stroke="none"/>
+      <line x1="11" y1="5.5" x2="21" y2="5.5"/>
+      <rect x="3" y="10" width="5" height="5" rx="1" fill="currentColor" stroke="none" opacity="0.55"/>
+      <line x1="11" y1="12.5" x2="21" y2="12.5"/>
+      <rect x="3" y="17" width="5" height="5" rx="1" fill="currentColor" stroke="none" opacity="0.25"/>
+      <line x1="11" y1="19.5" x2="21" y2="19.5"/>
+    </svg>
+
+  </button>
+
+  <!-- Panel desplegable -->
+  <div class="panel" *ngIf="abierto">
+    <p class="panel-titulo">Leyenda</p>
+
+    <p class="vacio" *ngIf="capasVisibles.length === 0">
+      No hay capas visibles activas
+    </p>
+
+    <div class="leyenda-lista">
+      <div
+        *ngFor="let estado of capasVisibles; trackBy: trackByCapa"
+        class="leyenda-item"
+      >
+        <p class="capa-nombre">{{ estado.capa.title }}</p>
+        <img
+          [src]="getLegendUrl(estado)"
+          [alt]="'Leyenda de ' + estado.capa.title"
+          class="leyenda-img"
+          loading="lazy"
+        />
+      </div>
+    </div>
+  </div>
+
+</div>

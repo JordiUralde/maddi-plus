@@ -34,7 +34,7 @@ export class BuscadorComponent {
     { value: 'calle',           label: 'Calle' },
     { value: 'punto_recogida',  label: 'Punto de recogida' },
     { value: 'coordenadas',     label: 'Distancia desde punto' },
-    { value: 'refcat',          label: 'Ref. catastral' },
+    //{ value: 'refcat',          label: 'Ref. catastral' },
   ];
 
   tipo: TipoBusqueda = 'barrio';

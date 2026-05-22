@@ -32,12 +32,14 @@ export class RadioInfoComponent {
   @Input() portales: PortalFeature[] = [];
   @Input() contenedor: ContenedorInfo | null = null;
   @Input() cargando = false;
+  @Input() portalActivoId: number | null = null;
 
   /** Se emite en cada movimiento del slider (actualiza el círculo en tiempo real) */
   @Output() radioCirculoCambiado = new EventEmitter<number>();
   /** Se emite al soltar el slider (lanza la llamada a la API) */
   @Output() radioCambiado = new EventEmitter<number>();
   @Output() cerrado = new EventEmitter<void>();
+  @Output() portalSeleccionado = new EventEmitter<{ id: number; props: Record<string, unknown> }>();
 
   onSliderInput(): void {
     this.radioCirculoCambiado.emit(this.radioTemp);
@@ -45,6 +47,11 @@ export class RadioInfoComponent {
 
   onSliderChange(): void {
     this.radioCambiado.emit(this.radioTemp);
+  }
+
+  onPortalClick(portal: PortalFeature): void {
+    const id = portal.properties['id'] as number;
+    this.portalSeleccionado.emit({ id, props: portal.properties });
   }
 
   colorFraccion(fraccion: string | undefined): string {

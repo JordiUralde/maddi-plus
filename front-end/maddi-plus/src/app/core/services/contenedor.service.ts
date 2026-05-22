@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { environment } from '../../../environments/environment';
-import { BusquedaParams, ContenedorGeoJSON, PortalesGeoJSON } from '../models/contenedor.model';
+import { BusquedaParams, ContenedorGeoJSON, PortalesGeoJSON, ViviendaRecord } from '../models/contenedor.model';
 
 @Injectable({
   providedIn: 'root',
@@ -20,6 +20,10 @@ export class ContenedorService {
     return this.http.get<PortalesGeoJSON>(
       `${this.url}/portales/${lon}/${lat}?radio=${radio}`
     );
+  }
+
+  getViviendas(portalId: number): Observable<ViviendaRecord[]> {
+    return this.http.get<ViviendaRecord[]>(`${this.url}/portales/${portalId}/viviendas`);
   }
 
   buscarContenedores(params: BusquedaParams): Observable<ContenedorGeoJSON> {

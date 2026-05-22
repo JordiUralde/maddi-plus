@@ -40,6 +40,8 @@ export interface ResultadoContenedor {
   lat: number;
 }
 
+export type ViviendaRecord = Record<string, unknown>;
+
 export type BusquedaParams =
   | { barrio: string }
   | { calle: string }

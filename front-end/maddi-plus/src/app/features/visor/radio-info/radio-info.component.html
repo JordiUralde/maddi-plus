@@ -48,11 +48,25 @@
     </p>
 
     <ul *ngIf="!cargando && portales.length > 0">
-      <li *ngFor="let p of portales" class="portal-item">
-        <div *ngFor="let prop of propiedades(p.properties)" class="prop-row">
-          <span class="prop-key">{{ prop.k }}</span>
-          <span class="prop-val">{{ prop.v }}</span>
+      <li
+        *ngFor="let p of portales"
+        class="portal-item"
+        [class.activo]="portalActivoId === p.properties['id']"
+        (click)="onPortalClick(p)"
+        role="button"
+        tabindex="0"
+        (keydown.enter)="onPortalClick(p)"
+        (keydown.space)="onPortalClick(p)"
+      >
+        <div class="prop-row">
+          <span class="prop-key">Nº Portal</span>
+          <span class="prop-val">{{ p.properties['numero'] }}</span>
         </div>
+        <div class="prop-row">
+          <span class="prop-key">Calle</span>
+          <span class="prop-val">{{ p.properties['calle'] ?? '&mdash;' }}</span>
+        </div>
+        <span class="viviendas-hint">Ver viviendas →</span>
       </li>
     </ul>
 
