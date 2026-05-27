@@ -1,14 +1,19 @@
 export interface Contenedor {
   matricula: number;
   distrito: string;
-  seccion: string;
   barrio: string;
   punto_recogida: number;
   direccion: string;
-  x: number; // latitud  (EPSG:4326)
-  y: number; // longitud (EPSG:4326)
+  x: number;
+  y: number;
   fraccion: string;
-  seccion_censal: string;
-  arquitectura: string;
-  certificado: string;
+  tension_pila: number | null;
+  modelo_contenedor: string | null;
+  capacidad: number | null;
+  aportaciones_ultimo_anio: number | null;
+  estado: string | null;
+  descripcion_incidencia: string | null;
+  estado_tapa: string | null;
+  estado_cerradura: string | null;
+  [key: string]: unknown; // resto de columnas desconocidas
 }

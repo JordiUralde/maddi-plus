@@ -1,0 +1,225 @@
+:host {
+  display: block;
+}
+
+.incidencias-panel {
+  width: 320px;
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+// ── Cabecera ────────────────────────────────────────────────────────────────
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #c0392b;
+
+  svg { flex-shrink: 0; }
+}
+
+.badge {
+  background: #c0392b;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.btn-capa {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1.5px solid rgba(0,0,0,0.15);
+  border-radius: 6px;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+
+  &.activo {
+    background: rgba(21, 101, 192, 0.1);
+    border-color: #1565C0;
+    color: #1565C0;
+  }
+
+  &:hover {
+    background: rgba(21, 101, 192, 0.15);
+    border-color: #1565C0;
+    color: #1565C0;
+  }
+}
+
+.btn-cerrar {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: #888;
+  cursor: pointer;
+  line-height: 1;
+  padding: 2px 4px;
+  border-radius: 4px;
+
+  &:hover { background: rgba(0,0,0,0.07); color: #333; }
+}
+
+// ── Filtros ─────────────────────────────────────────────────────────────────
+.filtros {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+  flex-shrink: 0;
+}
+
+.chip {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  border: 1.5px solid rgba(0,0,0,0.14);
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #555;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .chip-count {
+    background: rgba(0,0,0,0.09);
+    border-radius: 8px;
+    padding: 0 5px;
+    font-size: 0.68rem;
+    margin-left: 2px;
+  }
+
+  &.activo {
+    background: var(--color, #333);
+    border-color: var(--color, #333);
+    color: #fff;
+
+    .chip-count { background: rgba(255,255,255,0.25); }
+  }
+
+  &:not(.activo):hover {
+    border-color: var(--color, #555);
+    color: var(--color, #555);
+  }
+}
+
+// ── Lista ────────────────────────────────────────────────────────────────────
+.lista {
+  overflow-y: auto;
+  flex: 1;
+  padding: 6px 0;
+}
+
+.sin-resultados {
+  padding: 16px 14px;
+  color: #999;
+  font-style: italic;
+  text-align: center;
+}
+
+.item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 7px 12px;
+  cursor: pointer;
+  transition: background 0.12s;
+
+  &:hover {
+    background: rgba(0,0,0,0.04);
+
+    .icono-zoom { opacity: 1; }
+  }
+}
+
+.tipo-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 3px;
+  border: 1.5px solid rgba(255,255,255,0.7);
+  box-shadow: 0 0 0 1.5px rgba(0,0,0,0.15);
+}
+
+.item-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.item-desc {
+  font-weight: 700;
+  font-size: 0.78rem;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-dir {
+  font-size: 0.75rem;
+  color: #555;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.item-meta {
+  font-size: 0.70rem;
+  color: #999;
+}
+
+.icono-zoom {
+  flex-shrink: 0;
+  color: #1565C0;
+  opacity: 0;
+  transition: opacity 0.15s;
+  margin-top: 2px;
+}

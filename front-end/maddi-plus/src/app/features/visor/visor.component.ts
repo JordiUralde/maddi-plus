@@ -18,6 +18,7 @@ import { LeyendaComponent } from './leyenda/leyenda.component';
 import { RadioInfoComponent } from './radio-info/radio-info.component';
 import { ViviendaInfoComponent } from './vivienda-info/vivienda-info.component';
 import { BuscadorComponent } from './buscador/buscador.component';
+import { IncidenciasPanelComponent } from './incidencias-panel/incidencias-panel.component';
 import { VisorMapService } from '../../core/services/visor-map.service';
 import { MapaFondoService } from '../../core/services/mapa-fondo.service';
 import { MapaFondo } from '../../core/models/mapa-fondo.model';
@@ -25,6 +26,7 @@ import { GeoLayerService } from '../../core/services/geo-layer.service';
 import { ContenedorService } from '../../core/services/contenedor.service';
 import {
   ContenedorInfo,
+  IncidenciasGeoJSON,
   PortalFeature,
   ViviendaRecord,
 } from '../../core/models/contenedor.model';
@@ -41,6 +43,7 @@ import { Router } from '@angular/router';
     RadioInfoComponent,
     ViviendaInfoComponent,
     BuscadorComponent,
+    IncidenciasPanelComponent,
   ],
   templateUrl: './visor.component.html',
   styleUrl: './visor.component.scss',
@@ -70,6 +73,13 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   coordsCapturadas: [number, number] | null = null;
 
+  // ── Estado incidencias ────────────────────────────────────────────────────
+  private static readonly COOKIE_INCIDENCIAS = 'maddiplus-incidencias-capa';
+
+  incidenciasGeoJSON: IncidenciasGeoJSON | null = null;
+  mostrarPanelIncidencias = false;
+  incidenciasCapaVisible = this.leerCookieIncidencias();
+
   constructor(
     private mapService: VisorMapService,
     private mapaFondoService: MapaFondoService,
@@ -85,15 +95,27 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cargarMapasFondo();
     this.cargarCapasWMS();
     this.cargarContenedores();
+    this.cargarIncidencias();
   }
 
   ngAfterViewInit(): void {
     this.mapService.init(this.mapContainer.nativeElement);
     this.mapService.setupInteractions(
-      (lon, lat, fraccion, direccion, _coords) => {
-        this.infoContenedor = { lon, lat, fraccion, direccion };
+      (lon, lat, fraccion, direccion, _coords, matricula) => {
+        // Mostrar panel inmediatamente con datos básicos del WFS
+        this.infoContenedor = {
+          lon, lat, fraccion, direccion, matricula,
+          barrio: null, distrito: null, punto_recogida: null,
+          tension_pila: null, modelo_contenedor: null, capacidad: null,
+          aportaciones_ultimo_anio: null, estado: null,
+          descripcion_incidencia: null, estado_tapa: null, estado_cerradura: null,
+        };
         this.buscarPortales(lon, lat, this.radioInfo);
         this.cdr.markForCheck();
+        // Cargar detalles completos desde la BD usando la matrícula
+        if (matricula != null) {
+          this.cargarDetallesContenedor(matricula, lon, lat);
+        }
       },
       () => {
         this.infoContenedor = null;
@@ -103,8 +125,80 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     );
   }
 
+  private cargarDetallesContenedor(matricula: number, lon: number, lat: number): void {
+    this.contenedorService.getDetalles(matricula).subscribe({
+      next: (d) => {
+        this.infoContenedor = {
+          lon, lat,
+          fraccion:                 String(d['fraccion']                  ?? this.infoContenedor?.fraccion  ?? ''),
+          direccion:                String(d['direccion']                 ?? this.infoContenedor?.direccion ?? ''),
+          matricula:                d['matricula']                != null ? Number(d['matricula'])                : null,
+          barrio:                   d['barrio']                  != null ? String(d['barrio'])                   : null,
+          distrito:                 d['distrito']                != null ? String(d['distrito'])                 : null,
+          punto_recogida:           d['punto_recogida']          != null ? Number(d['punto_recogida'])           : null,
+          tension_pila:             d['tension_pila']            != null ? Number(d['tension_pila'])             : null,
+          modelo_contenedor:        d['modelo_contenedor']       != null ? String(d['modelo_contenedor'])        : null,
+          capacidad:                d['capacidad']               != null ? Number(d['capacidad'])                : null,
+          aportaciones_ultimo_anio: d['aportaciones_ultimo_anio'] != null ? Number(d['aportaciones_ultimo_anio']) : null,
+          estado:                   d['estado']                  != null ? String(d['estado'])                   : null,
+          descripcion_incidencia:   d['descripcion_incidencia']  != null ? String(d['descripcion_incidencia'])   : null,
+          estado_tapa:              d['estado_tapa']             != null ? String(d['estado_tapa'])              : null,
+          estado_cerradura:         d['estado_cerradura']        != null ? String(d['estado_cerradura'])         : null,
+        };
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   ngOnDestroy(): void {
     this.mapService.destroy();
+  }
+
+  // ── Incidencias ───────────────────────────────────────────────────────────
+
+  private cargarIncidencias(): void {
+    this.contenedorService.getIncidencias().subscribe({
+      next: (geojson) => {
+        this.incidenciasGeoJSON = geojson;
+        this.mapService.cargarIncidencias(geojson);
+        // Aplica la preferencia guardada en cookie
+        this.mapService.setIncidenciasVisible(this.incidenciasCapaVisible);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
+  togglePanelIncidencias(): void {
+    this.mostrarPanelIncidencias = !this.mostrarPanelIncidencias;
+  }
+
+  onVisibilidadCapaIncidencias(visible: boolean): void {
+    this.incidenciasCapaVisible = visible;
+    this.mapService.setIncidenciasVisible(visible);
+    this.guardarCookieIncidencias(visible);
+  }
+
+  private leerCookieIncidencias(): boolean {
+    const match = document.cookie
+      .split(';')
+      .map((c) => c.trim())
+      .find((c) => c.startsWith(VisorComponent.COOKIE_INCIDENCIAS + '='));
+    // Si la cookie no existe aún, el valor por defecto es visible (true)
+    return match ? match.split('=')[1] !== 'false' : true;
+  }
+
+  private guardarCookieIncidencias(visible: boolean): void {
+    // Expira en 365 días; SameSite=Lax es suficiente para uso interno
+    const expires = new Date();
+    expires.setFullYear(expires.getFullYear() + 1);
+    document.cookie =
+      `${VisorComponent.COOKIE_INCIDENCIAS}=${visible}` +
+      `; expires=${expires.toUTCString()}` +
+      `; path=/; SameSite=Lax`;
+  }
+
+  onZoomAIncidencia(coords: { lon: number; lat: number }): void {
+    this.mapService.animarZoomACoordenadas(coords.lon, coords.lat);
   }
 
   logout(): void {

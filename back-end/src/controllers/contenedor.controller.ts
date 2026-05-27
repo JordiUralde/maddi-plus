@@ -9,6 +9,8 @@ import {
   findContenedoresByPuntoRecogida,
   findContenedoresByRadio,
   findContenedoresByRefcat,
+  findContenedorByMatricula,
+  findContenedoresConIncidencias,
 } from '../repositories/contenedor.repository';
 
 export async function getContenedores(
@@ -94,6 +96,28 @@ export async function getViviendasByPortal(
   }
 }
 
+export async function getContenedorDetalles(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const matricula = parseInt(req.params['matricula'], 10);
+    if (isNaN(matricula) || matricula < 1) {
+      res.status(400).json({ message: 'Matrícula inválida' });
+      return;
+    }
+    const contenedor = await findContenedorByMatricula(matricula);
+    if (!contenedor) {
+      res.status(404).json({ message: 'Contenedor no encontrado' });
+      return;
+    }
+    res.status(200).json(contenedor);
+  } catch (err) {
+    next(err);
+  }
+}
+
 export async function buscarContenedores(
   req: Request,
   res: Response,
@@ -140,6 +164,19 @@ export async function buscarContenedores(
     }
 
     res.status(400).json({ message: 'Debe indicar al menos un criterio de búsqueda: barrio, calle, punto_recogida, lon+lat, o refcat' });
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function getIncidencias(
+  _req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const geojson = await findContenedoresConIncidencias();
+    res.status(200).json(geojson);
   } catch (err) {
     next(err);
   }

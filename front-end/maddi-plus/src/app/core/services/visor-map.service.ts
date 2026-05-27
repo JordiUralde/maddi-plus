@@ -19,7 +19,7 @@ import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { circular } from 'ol/geom/Polygon';
 import { easeOut } from 'ol/easing';
-import { ContenedorGeoJSON, PortalesGeoJSON } from '../models/contenedor.model';
+import { ContenedorGeoJSON, IncidenciasGeoJSON, PortalesGeoJSON, TipoIncidencia } from '../models/contenedor.model';
 
 export type ContenedorClickHandler = (
   lon: number,
@@ -27,6 +27,7 @@ export type ContenedorClickHandler = (
   fraccion: string,
   direccion: string,
   coords: number[],
+  matricula: number | null,
 ) => void;
 
 /**
@@ -43,6 +44,7 @@ export class VisorMapService {
   private baseLayer!: TileLayer<XYZ>;
   private wmsLayers = new globalThis.Map<string, TileLayer<TileWMS>>();
   private contenedoresLayer!: VectorLayer<VectorSource>;
+  private incidenciasLayer!: VectorLayer<VectorSource>;
   private circleSource = new VectorSource();
   private portalesHighlightSource = new VectorSource();
   private resultadosSource = new VectorSource();
@@ -213,6 +215,47 @@ export class VisorMapService {
     this.contenedoresLayer?.setVisible(visible);
   }
 
+  // ── Capa de incidencias ───────────────────────────────────────────────────
+
+  private colorPorTipoIncidencia(desc: string): string {
+    const d = (desc ?? '').toLowerCase();
+    if (d.includes('bater'))      return '#F9A825';
+    if (d.includes('cerradura'))  return '#c0392b';
+    if (d.includes('tapa'))       return '#e67e22';
+    return '#757575';
+  }
+
+  cargarIncidencias(geojson: IncidenciasGeoJSON): void {
+    if (!this.map) return;
+    if (this.incidenciasLayer) {
+      this.map.removeLayer(this.incidenciasLayer);
+    }
+    const features = new GeoJSON().readFeatures(geojson, {
+      dataProjection: 'EPSG:4326',
+      featureProjection: 'EPSG:3857',
+    });
+    this.incidenciasLayer = new VectorLayer({
+      source: new VectorSource({ features }),
+      zIndex: 105,
+      style: (feature) => {
+        const desc = feature.get('descripcion_incidencia') as string ?? '';
+        const color = this.colorPorTipoIncidencia(desc);
+        return new Style({
+          image: new CircleStyle({
+            radius: 9,
+            fill: new Fill({ color }),
+            stroke: new Stroke({ color: '#ffffff', width: 2 }),
+          }),
+        });
+      },
+    });
+    this.map.addLayer(this.incidenciasLayer);
+  }
+
+  setIncidenciasVisible(visible: boolean): void {
+    this.incidenciasLayer?.setVisible(visible);
+  }
+
   // ── Selección: círculo + portales ─────────────────────────────────────────
 
   /** Actualiza el polígono circular en el mapa (dentro del Angular zone). */
@@ -263,7 +306,7 @@ export class VisorMapService {
   zoomToResultados(): void {
     const extent = this.resultadosSource.getExtent();
     if (extent && isFinite(extent[0])) {
-      this.map.getView().fit(extent, { padding: [80, 80, 80, 80], maxZoom: 17, duration: 800, easing: easeOut });
+      this.map.getView().fit(extent, { padding: [80, 80, 80, 80], maxZoom: 17, duration: 400, easing: easeOut });
     }
   }
 
@@ -271,7 +314,7 @@ export class VisorMapService {
     this.map.getView().animate({
       center: fromLonLat([lon, lat]),
       zoom: Math.max(this.map.getView().getZoom() ?? 17, 17),
-      duration: 800,
+      duration: 400,
       easing: easeOut,
     });
   }
@@ -296,7 +339,7 @@ export class VisorMapService {
     this.map.getView().animate({
       center: coords,
       zoom: Math.max(this.map.getView().getZoom() ?? 15, 17),
-      duration: 800,
+      duration: 400,
       easing: easeOut,
     });
   }
@@ -344,7 +387,13 @@ export class VisorMapService {
           this.actualizarCirculo(lon, lat, this.radioActual);
           this.animarZoom(coords);
           // Actualización de estado de UI: dentro de zone
-          this.ngZone.run(() => onContenedorClick(lon, lat, feature.get('fraccion'), feature.get('direccion'), coords));
+          this.ngZone.run(() => onContenedorClick(
+            lon, lat,
+            feature.get('fraccion'),
+            feature.get('direccion'),
+            coords,
+            feature.get('matricula') ?? null,
+          ));
         } else {
           this.ngZone.run(() => onVacioClick());
         }

@@ -11,19 +11,82 @@
     <button class="close-btn" type="button" title="Cerrar" (click)="cerrado.emit()">✕</button>
   </div>
 
+  <!-- Detalles del contenedor -->
+  <div class="contenedor-detalles">
+
+    <!-- Grupo: Identificación -->
+    <div class="detalle-grupo"
+      *ngIf="contenedor?.matricula != null || contenedor?.modelo_contenedor || contenedor?.capacidad != null">
+      <span class="grupo-titulo">Identificación</span>
+      <div class="detalle-fila" *ngIf="contenedor?.matricula != null">
+        <span class="detalle-label">Matrícula</span>
+        <span class="detalle-valor">{{ contenedor?.matricula }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.modelo_contenedor">
+        <span class="detalle-label">Modelo</span>
+        <span class="detalle-valor">{{ contenedor?.modelo_contenedor }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.capacidad != null">
+        <span class="detalle-label">Capacidad</span>
+        <span class="detalle-valor">{{ contenedor?.capacidad }} L</span>
+      </div>
+    </div>
+
+    <!-- Grupo: Ubicación -->
+    <div class="detalle-grupo"
+      *ngIf="contenedor?.barrio || contenedor?.distrito || contenedor?.punto_recogida != null">
+      <span class="grupo-titulo">Ubicación</span>
+      <div class="detalle-fila" *ngIf="contenedor?.barrio">
+        <span class="detalle-label">Barrio</span>
+        <span class="detalle-valor">{{ contenedor?.barrio }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.distrito">
+        <span class="detalle-label">Distrito</span>
+        <span class="detalle-valor">{{ contenedor?.distrito }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.punto_recogida != null">
+        <span class="detalle-label">Pto. Recogida</span>
+        <span class="detalle-valor">{{ contenedor?.punto_recogida }}</span>
+      </div>
+    </div>
+
+    <!-- Grupo: Estado -->
+    <div class="detalle-grupo">
+      <span class="grupo-titulo">Estado</span>
+      <div class="detalle-fila" *ngIf="contenedor?.estado">
+        <span class="detalle-label">Estado</span>
+        <span class="detalle-valor estado-badge">{{ contenedor?.estado }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.estado_tapa">
+        <span class="detalle-label">Estado tapa</span>
+        <span class="detalle-valor">{{ contenedor?.estado_tapa }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.estado_cerradura">
+        <span class="detalle-label">Estado cerradura</span>
+        <span class="detalle-valor">{{ contenedor?.estado_cerradura }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.tension_pila != null">
+        <span class="detalle-label">Tensión pila</span>
+        <span class="detalle-valor">{{ contenedor?.tension_pila }} V</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.aportaciones_ultimo_anio != null">
+        <span class="detalle-label">Aportaciones año</span>
+        <span class="detalle-valor">{{ contenedor?.aportaciones_ultimo_anio }}</span>
+      </div>
+      <div class="detalle-fila" *ngIf="contenedor?.descripcion_incidencia">
+        <span class="detalle-label">Incidencia</span>
+        <span class="detalle-valor detalle-incidencia">{{ contenedor?.descripcion_incidencia }}</span>
+      </div>
+    </div>
+
+  </div>
+
   <!-- Slider de radio -->
   <div class="radio-control">
     <label>Radio de búsqueda</label>
     <div class="slider-row">
-      <input
-        type="range"
-        min="50"
-        max="500"
-        step="10"
-        [(ngModel)]="radioTemp"
-        (input)="onSliderInput()"
-        (change)="onSliderChange()"
-      />
+      <input type="range" min="50" max="500" step="10" [(ngModel)]="radioTemp" (input)="onSliderInput()"
+        (change)="onSliderChange()" />
       <span class="radio-value">{{ radioTemp }} m</span>
     </div>
   </div>
@@ -32,7 +95,8 @@
   <div class="resultados-header">
     <span *ngIf="cargando" class="cargando-text">Buscando…</span>
     <span *ngIf="!cargando">
-      {{ portales.length }} edificio{{ portales.length !== 1 ? 's' : '' }} encontrado{{ portales.length !== 1 ? 's' : '' }}
+      {{ portales.length }} edificio{{ portales.length !== 1 ? 's' : '' }} encontrado{{ portales.length !== 1 ? 's' : ''
+      }}
     </span>
   </div>
 
@@ -48,16 +112,9 @@
     </p>
 
     <ul *ngIf="!cargando && portales.length > 0">
-      <li
-        *ngFor="let p of portales"
-        class="portal-item"
-        [class.activo]="portalActivoId === p.properties['id']"
-        (click)="onPortalClick(p)"
-        role="button"
-        tabindex="0"
-        (keydown.enter)="onPortalClick(p)"
-        (keydown.space)="onPortalClick(p)"
-      >
+      <li *ngFor="let p of portales" class="portal-item" [class.activo]="portalActivoId === p.properties['id']"
+        (click)="onPortalClick(p)" role="button" tabindex="0" (keydown.enter)="onPortalClick(p)"
+        (keydown.space)="onPortalClick(p)">
         <div class="prop-row">
           <span class="prop-key">Nº Portal</span>
           <span class="prop-val">{{ p.properties['numero'] }}</span>
@@ -71,5 +128,4 @@
     </ul>
 
   </div>
-
 </div>

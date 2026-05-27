@@ -4,10 +4,7 @@ import { pool } from '../config/db';
 import { Contenedor } from '../models/contenedor.model';
 import { env } from '../config/env';
 
-const SELECT_CONTENEDOR = `
-  SELECT matricula, distrito, seccion, barrio, punto_recogida,
-         direccion, x, y, fraccion, seccion_censal, arquitectura, certificado
-  FROM contenedores`;
+const SELECT_CONTENEDOR = `SELECT * FROM contenedores`;
 
 function fetchText(url: string): Promise<string> {
   return new Promise((resolve, reject) => {
@@ -28,12 +25,20 @@ function rowsToFeatureCollection(rows: Contenedor[]): GeoJSONFeatureCollection {
       type: 'Feature',
       geometry: { type: 'Point', coordinates: [Number(c.y), Number(c.x)] },
       properties: {
-        matricula: c.matricula,
-        direccion: c.direccion,
-        fraccion: c.fraccion,
-        barrio: c.barrio,
-        distrito: c.distrito,
-        punto_recogida: c.punto_recogida,
+        matricula:               c.matricula,
+        direccion:               c.direccion,
+        fraccion:                c.fraccion,
+        barrio:                  c.barrio,
+        distrito:                c.distrito,
+        punto_recogida:          c.punto_recogida,
+        tension_pila:            c.tension_pila            ?? null,
+        modelo_contenedor:       c.modelo_contenedor       ?? null,
+        capacidad:               c.capacidad               ?? null,
+        aportaciones_ultimo_anio: c.aportaciones_ultimo_anio ?? null,
+        estado:                  c.estado                  ?? null,
+        descripcion_incidencia:  c.descripcion_incidencia  ?? null,
+        estado_tapa:             c.estado_tapa             ?? null,
+        estado_cerradura:        c.estado_cerradura        ?? null,
       },
     })),
   };
@@ -97,12 +102,10 @@ async function findAllContenedoresFromWFS(): Promise<GeoJSONFeatureCollection> {
         type: 'Feature',
         geometry: f.geometry,
         properties: {
-          matricula:      p['Matricula']  ?? p['matricula']  ?? null,
-          direccion:      p['Dirección']  ?? p['Direccion']  ?? p['direccion']  ?? null,
-          fraccion:       p['Fracción']   ?? p['Fraccion']   ?? p['fraccion']   ?? null,
-          barrio:         p['BARRIO']     ?? p['Barrio']     ?? p['barrio']     ?? null,
-          distrito:       p['DISTRITO']   ?? p['Distrito']   ?? p['distrito']   ?? null,
-          punto_recogida: p['Punto_Reco'] ?? p['punto_recogida'] ?? null,
+          ...p,  // propiedades en bruto del WFS (para diagnóstico y nombres no mapeados)
+          matricula: p['Matricula'] ?? p['matricula'] ?? null,
+          direccion: p['Dirección'] ?? p['Direccion'] ?? p['direccion'] ?? null,
+          fraccion:  p['Fracción']  ?? p['Fraccion']  ?? p['fraccion']  ?? null,
         },
       };
     }),
@@ -111,10 +114,7 @@ async function findAllContenedoresFromWFS(): Promise<GeoJSONFeatureCollection> {
 
 async function findAllContenedoresFromDB(): Promise<GeoJSONFeatureCollection> {
   const { rows } = await pool.query<Contenedor>(
-    `SELECT matricula, distrito, seccion, barrio, punto_recogida,
-            direccion, x, y, fraccion, seccion_censal, arquitectura, certificado
-     FROM contenedores
-     ORDER BY matricula`
+    `SELECT * FROM contenedores ORDER BY matricula`
   );
   return rowsToFeatureCollection(rows);
 }
@@ -200,6 +200,14 @@ export async function findPortalesByRadio(
       properties: r.properties as Record<string, unknown>,
     })),
   };
+}
+
+export async function findContenedorByMatricula(matricula: number): Promise<Record<string, unknown> | null> {
+  const { rows } = await pool.query(
+    `SELECT * FROM contenedores WHERE matricula = $1 LIMIT 1`,
+    [matricula]
+  );
+  return rows[0] ?? null;
 }
 
 export async function findViviendasByPortalId(
@@ -294,6 +302,21 @@ export async function findContenedoresByRefcat(
      )
      ORDER BY contenedores.matricula`,
     [refcat, radio]
+  );
+  return rowsToFeatureCollection(rows);
+}
+
+/**
+ * Devuelve únicamente los contenedores que tienen una incidencia registrada,
+ * consultando directamente la BD (los campos estado/descripcion_incidencia
+ * no están disponibles en la capa WFS de GeoServer).
+ */
+export async function findContenedoresConIncidencias(): Promise<GeoJSONFeatureCollection> {
+  const { rows } = await pool.query<Contenedor>(
+    `${SELECT_CONTENEDOR}
+     WHERE descripcion_incidencia IS NOT NULL
+       AND TRIM(descripcion_incidencia) <> ''
+     ORDER BY matricula`
   );
   return rowsToFeatureCollection(rows);
 }
