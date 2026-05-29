@@ -64,6 +64,17 @@
     overflow: hidden;
     font-size: 13px;
 
+    .panel-titulo {
+      font-size: 0.7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--maddi-green-dark, #5a9e32);
+      padding: 8px 14px;
+      border-bottom: 1px solid #e5e5e5;
+      margin: 0 0 6px;
+    }
+
     .captura-aviso {
       display: flex;
       align-items: center;
