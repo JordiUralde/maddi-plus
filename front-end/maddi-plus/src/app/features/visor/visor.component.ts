@@ -161,7 +161,6 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (geojson) => {
         this.incidenciasGeoJSON = geojson;
         this.mapService.cargarIncidencias(geojson);
-        // Aplica la preferencia guardada en cookie
         this.mapService.setIncidenciasVisible(this.incidenciasCapaVisible);
         this.cdr.markForCheck();
       },
@@ -301,6 +300,7 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   onLimpiarResultados(): void {
     this.mapService.clearResultados();
+    this.mapService.clearPuntoBusqueda();
   }
 
   onZoomAContenedor(coords: [number, number]): void {

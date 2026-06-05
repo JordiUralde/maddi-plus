@@ -15,11 +15,12 @@ import Style from 'ol/style/Style';
 import CircleStyle from 'ol/style/Circle';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
+import Icon from 'ol/style/Icon';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import { circular } from 'ol/geom/Polygon';
 import { easeOut } from 'ol/easing';
-import { ContenedorGeoJSON, IncidenciasGeoJSON, PortalesGeoJSON, TipoIncidencia } from '../models/contenedor.model';
+import { ContenedorGeoJSON, IncidenciasGeoJSON, PortalesGeoJSON } from '../models/contenedor.model';
 
 export type ContenedorClickHandler = (
   lon: number,
@@ -44,13 +45,14 @@ export class VisorMapService {
   private baseLayer!: TileLayer<XYZ>;
   private wmsLayers = new globalThis.Map<string, TileLayer<TileWMS>>();
   private contenedoresLayer!: VectorLayer<VectorSource>;
-  private incidenciasLayer!: VectorLayer<VectorSource>;
+  private incidenciasLayer: VectorLayer<VectorSource> | null = null;
   private circleSource = new VectorSource();
   private portalesHighlightSource = new VectorSource();
   private resultadosSource = new VectorSource();
 
   private pickModeActive = false;
   private pickCallback: ((lon: number, lat: number) => void) | null = null;
+  private pintoBusquedaSource = new VectorSource();
 
   // Radio actual para dibujar el círculo de selección
   private radioActual = 100;
@@ -97,6 +99,20 @@ export class VisorMapService {
       }),
     });
 
+    const svgPin = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="40" viewBox="0 0 28 40"><path d="M14 0C6.268 0 0 6.268 0 14c0 10.5 14 26 14 26s14-15.5 14-26C28 6.268 21.732 0 14 0z" fill="#e53935"/><circle cx="14" cy="14" r="6" fill="white"/></svg>`;
+    const pintoBusquedaLayer = new VectorLayer({
+      source: this.pintoBusquedaSource,
+      zIndex: 120,
+      style: new Style({
+        image: new Icon({
+          src: 'data:image/svg+xml;utf8,' + encodeURIComponent(svgPin),
+          anchor: [0.5, 1],
+          anchorXUnits: 'fraction',
+          anchorYUnits: 'fraction',
+        }),
+      }),
+    });
+
     const resultadosLayer = new VectorLayer({
       source: this.resultadosSource,
       zIndex: 110,
@@ -114,7 +130,7 @@ export class VisorMapService {
 
     this.map = new OlMap({
       target,
-      layers: [this.baseLayer, circleLayer, portalesHighlightLayer, resultadosLayer],
+      layers: [this.baseLayer, circleLayer, portalesHighlightLayer, resultadosLayer, pintoBusquedaLayer],
       controls: defaultControls({ zoom: false, rotate: false, attribution: false }),
       interactions: defaultInteractions({ doubleClickZoom: false }),
       view: new View({
@@ -215,15 +231,7 @@ export class VisorMapService {
     this.contenedoresLayer?.setVisible(visible);
   }
 
-  // ── Capa de incidencias ───────────────────────────────────────────────────
-
-  private colorPorTipoIncidencia(desc: string): string {
-    const d = (desc ?? '').toLowerCase();
-    if (d.includes('bater'))      return '#F9A825';
-    if (d.includes('cerradura'))  return '#c0392b';
-    if (d.includes('tapa'))       return '#e67e22';
-    return '#757575';
-  }
+  // ── Capa de incidencias ─────────────────────────────────────────────
 
   cargarIncidencias(geojson: IncidenciasGeoJSON): void {
     if (!this.map) return;
@@ -236,18 +244,14 @@ export class VisorMapService {
     });
     this.incidenciasLayer = new VectorLayer({
       source: new VectorSource({ features }),
-      zIndex: 105,
-      style: (feature) => {
-        const desc = feature.get('descripcion_incidencia') as string ?? '';
-        const color = this.colorPorTipoIncidencia(desc);
-        return new Style({
-          image: new CircleStyle({
-            radius: 9,
-            fill: new Fill({ color }),
-            stroke: new Stroke({ color: '#ffffff', width: 2 }),
-          }),
-        });
-      },
+      zIndex: 106,
+      style: new Style({
+        image: new CircleStyle({
+          radius: 4,
+          fill: new Fill({ color: '#ff0000' }),
+          stroke: new Stroke({ color: '#ffffff', width: 1 }),
+        }),
+      }),
     });
     this.map.addLayer(this.incidenciasLayer);
   }
@@ -301,6 +305,10 @@ export class VisorMapService {
 
   clearResultados(): void {
     this.resultadosSource.clear();
+  }
+
+  clearPuntoBusqueda(): void {
+    this.pintoBusquedaSource.clear();
   }
 
   zoomToResultados(): void {
@@ -372,6 +380,9 @@ export class VisorMapService {
           const [lon, lat] = toLonLat(evt.coordinate);
           const cb = this.pickCallback;
           this.cancelarCapturaCoordenadas();
+          // Colocar chincheta roja en el punto seleccionado
+          this.pintoBusquedaSource.clear();
+          this.pintoBusquedaSource.addFeature(new Feature(new Point(evt.coordinate)));
           this.ngZone.run(() => cb(lon, lat));
           return;
         }

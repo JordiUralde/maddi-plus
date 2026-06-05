@@ -312,11 +312,50 @@ export async function findContenedoresByRefcat(
  * no están disponibles en la capa WFS de GeoServer).
  */
 export async function findContenedoresConIncidencias(): Promise<GeoJSONFeatureCollection> {
+  // 1. Propiedades de incidencias desde BD (incluye descripcion_incidencia y resto de campos)
   const { rows } = await pool.query<Contenedor>(
     `${SELECT_CONTENEDOR}
      WHERE descripcion_incidencia IS NOT NULL
        AND TRIM(descripcion_incidencia) <> ''
      ORDER BY matricula`
   );
-  return rowsToFeatureCollection(rows);
+
+  if (rows.length === 0) return { type: 'FeatureCollection', features: [] };
+
+  // 2. Intentar obtener geometrías actualizadas desde GeoServer WFS
+  try {
+    const wfs = await findAllContenedoresFromWFS();
+    const geomByMatricula = new Map<number, unknown>();
+    for (const f of wfs.features) {
+      const mat = f.properties['matricula'];
+      if (mat != null) geomByMatricula.set(Number(mat), f.geometry);
+    }
+    return {
+      type: 'FeatureCollection',
+      features: rows.map((c) => ({
+        type: 'Feature',
+        // Usa la geometría de WFS (posición actualizada); si no existe, cae a las coordenadas de BD
+        geometry: geomByMatricula.get(c.matricula) ?? { type: 'Point', coordinates: [Number(c.y), Number(c.x)] },
+        properties: {
+          matricula:                c.matricula,
+          direccion:                c.direccion,
+          fraccion:                 c.fraccion,
+          barrio:                   c.barrio,
+          distrito:                 c.distrito,
+          punto_recogida:           c.punto_recogida,
+          tension_pila:             c.tension_pila             ?? null,
+          modelo_contenedor:        c.modelo_contenedor        ?? null,
+          capacidad:                c.capacidad                ?? null,
+          aportaciones_ultimo_anio: c.aportaciones_ultimo_anio ?? null,
+          estado:                   c.estado                   ?? null,
+          descripcion_incidencia:   c.descripcion_incidencia   ?? null,
+          estado_tapa:              c.estado_tapa              ?? null,
+          estado_cerradura:         c.estado_cerradura         ?? null,
+        },
+      })),
+    };
+  } catch {
+    // Fallback a coordenadas de la BD si WFS no está disponible
+    return rowsToFeatureCollection(rows);
+  }
 }

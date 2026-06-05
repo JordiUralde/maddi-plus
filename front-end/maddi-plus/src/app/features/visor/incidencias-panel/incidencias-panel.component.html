@@ -39,9 +39,7 @@
       *ngFor="let tipo of tipos"
       class="chip"
       [class.activo]="filtroActivo === tipo"
-      [style.--color]="colorTipo(tipo)"
       (click)="setFiltro(tipo)">
-      <span class="dot" [style.background]="colorTipo(tipo)"></span>
       {{ tipo }}
       <span class="chip-count">{{ countTipo(tipo) }}</span>
     </button>
@@ -57,7 +55,7 @@
       class="item"
       (click)="onZoom(f)"
       title="Centrar en el mapa">
-      <span class="tipo-dot" [style.background]="colorTipo(tipoDeIncidencia(f))"></span>
+      <span class="tipo-dot" [style.background]="colorFraccion(f.properties.fraccion)"></span>
       <div class="item-info">
         <span class="item-desc">{{ f.properties.descripcion_incidencia }}</span>
         <span class="item-dir">{{ f.properties.direccion }}</span>

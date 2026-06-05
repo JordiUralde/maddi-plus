@@ -7,50 +7,35 @@
 
     <!-- Buscador (top-left) -->
     <div class="buscador-overlay">
-      <app-buscador
-        [coordsCapturadas]="coordsCapturadas"
-        (iniciarCapturaMapa)="onIniciarCapturaMapa()"
-        (resultadosObtenidos)="onResultadosBusqueda($event)"
-        (zoomAContenedor)="onZoomAContenedor($event)"
-        (limpiarResultados)="onLimpiarResultados()"
-      />
+      <app-buscador [coordsCapturadas]="coordsCapturadas" (iniciarCapturaMapa)="onIniciarCapturaMapa()"
+        (resultadosObtenidos)="onResultadosBusqueda($event)" (zoomAContenedor)="onZoomAContenedor($event)"
+        (limpiarResultados)="onLimpiarResultados()" />
     </div>
 
     <!-- Controles flotantes (top-right) -->
     <div class="selector-overlay">
-      <app-capa-selector
-        [capas]="capas"
-        (visibilidadCambiada)="onVisibilidadCambiada($event)"
-      />
-      <app-leyenda
-        [capas]="capas"
-      />
-      <app-mapa-selector
-        [mapasFondo]="mapasFondo"
-        [mapaActivo]="mapaActivo"
-        (mapaSeleccionado)="seleccionarMapa($event)"
-      />
+      <app-capa-selector [capas]="capas" (visibilidadCambiada)="onVisibilidadCambiada($event)" />
+      <app-leyenda [capas]="capas" />
+      <app-mapa-selector [mapasFondo]="mapasFondo" [mapaActivo]="mapaActivo"
+        (mapaSeleccionado)="seleccionarMapa($event)" />
       <!-- Botón cerrar sesión + incidencias apilados en columna -->
       <div class="acciones-col">
         <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/>
-            <polyline points="16 17 21 12 16 7"/>
-            <line x1="21" y1="12" x2="9" y2="12"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
           </svg>
           Cerrar sesión
         </button>
-        <button
-          class="btn-incidencias"
-          [class.activo]="mostrarPanelIncidencias"
-          (click)="togglePanelIncidencias()"
+        <button class="btn-incidencias" [class.activo]="mostrarPanelIncidencias" (click)="togglePanelIncidencias()"
           title="Ver incidencias">
-          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24"
-               fill="none" stroke="currentColor" stroke-width="2.2"
-               stroke-linecap="round" stroke-linejoin="round">
-            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
-            <line x1="12" y1="9" x2="12" y2="13"/>
-            <line x1="12" y1="17" x2="12.01" y2="17"/>
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" />
+            <line x1="12" y1="9" x2="12" y2="13" />
+            <line x1="12" y1="17" x2="12.01" y2="17" />
           </svg>
           Incidencias
           <span *ngIf="incidenciasGeoJSON" class="badge-inc">
@@ -62,42 +47,29 @@
 
     <!-- Paneles inferiores: portales + viviendas (bottom-left) -->
     <div class="paneles-inferiores" *ngIf="infoContenedor">
-      <app-radio-info
-        [contenedor]="infoContenedor"
-        [portales]="portales"
-        [radio]="radioInfo"
-        [cargando]="cargandoPortales"
-        [portalActivoId]="portalActivoId"
-        (radioCirculoCambiado)="onRadioCirculoCambiado($event)"
-        (radioCambiado)="onRadioCambiado($event)"
-        (cerrado)="onCerrarInfo()"
-        (portalSeleccionado)="onPortalSeleccionado($event)"
-      />
-      <app-vivienda-info
-        *ngIf="portalActivoId !== null"
-        [viviendas]="viviendas"
-        [cargando]="cargandoViviendas"
-        [portalProps]="portalActivoProps"
-        (cerrado)="onCerrarViviendas()"
-      />
+      <app-radio-info [contenedor]="infoContenedor" [portales]="portales" [radio]="radioInfo"
+        [cargando]="cargandoPortales" [portalActivoId]="portalActivoId"
+        (radioCirculoCambiado)="onRadioCirculoCambiado($event)" (radioCambiado)="onRadioCambiado($event)"
+        (cerrado)="onCerrarInfo()" (portalSeleccionado)="onPortalSeleccionado($event)" />
+      <app-vivienda-info *ngIf="portalActivoId !== null" [viviendas]="viviendas" [cargando]="cargandoViviendas"
+        [portalProps]="portalActivoProps" (cerrado)="onCerrarViviendas()" />
     </div>
 
     <!-- Logo (bottom-right) -->
     <div class="logo-overlay">
+      <a href="https://wearemaddi.com/" target="_blank" rel="noopener noreferrer">
+        <img src="assets/images/dorlet-Waste.png" alt="dorlet">
+      </a>
       <a href="https://www.estudiosgis.com/" target="_blank" rel="noopener noreferrer">
-        <img src="assets/images/logo-egis-blanco.png" alt="Estudios GIS" />
+        <img src="assets/images/logo-egis.png" alt="Estudios GIS" style="height:20px" />
       </a>
     </div>
 
     <!-- Panel incidencias (bottom-right, encima del logo) -->
     <div class="incidencias-overlay" *ngIf="mostrarPanelIncidencias">
-      <app-incidencias-panel
-        [incidencias]="incidenciasGeoJSON"
-        [capasVisible]="incidenciasCapaVisible"
-        (cerrado)="togglePanelIncidencias()"
-        (visibilidadCapa)="onVisibilidadCapaIncidencias($event)"
-        (zoomAIncidencia)="onZoomAIncidencia($event)"
-      />
+      <app-incidencias-panel [incidencias]="incidenciasGeoJSON" [capasVisible]="incidenciasCapaVisible"
+        (cerrado)="togglePanelIncidencias()" (visibilidadCapa)="onVisibilidadCapaIncidencias($event)"
+        (zoomAIncidencia)="onZoomAIncidencia($event)" />
     </div>
   </div>
 

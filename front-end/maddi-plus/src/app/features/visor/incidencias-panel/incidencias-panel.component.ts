@@ -58,12 +58,12 @@ export class IncidenciasPanelComponent implements OnChanges {
     return 'Otra';
   }
 
-  colorTipo(tipo: TipoIncidencia): string {
-    switch (tipo) {
-      case 'Batería baja':             return '#F9A825';
-      case 'Cerradura dejada abierta': return '#c0392b';
-      case 'Tapa abierta':             return '#e67e22';
-      default:                         return '#757575';
+  colorFraccion(fraccion: string): string {
+    switch (fraccion) {
+      case 'Papel/Cartón': return '#1565C0';
+      case 'Orgánico':     return '#6D4C41';
+      case 'Envases':      return '#F9A825';
+      default:             return '#757575';
     }
   }
 
