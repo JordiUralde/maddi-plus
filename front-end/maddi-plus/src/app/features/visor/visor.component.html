@@ -18,7 +18,7 @@
       <app-leyenda [capas]="capas" />
       <app-mapa-selector [mapasFondo]="mapasFondo" [mapaActivo]="mapaActivo"
         (mapaSeleccionado)="seleccionarMapa($event)" />
-      <!-- Botón cerrar sesión + incidencias apilados en columna -->
+      <!-- Botón cerrar sesión + incidencias + rutas apilados en columna -->
       <div class="acciones-col">
         <button class="btn-logout" (click)="logout()" title="Cerrar sesión">
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
@@ -41,6 +41,18 @@
           <span *ngIf="incidenciasGeoJSON" class="badge-inc">
             {{ incidenciasGeoJSON.features.length }}
           </span>
+        </button>
+        <button class="btn-rutas" [class.activo]="mostrarPanelRutas" (click)="togglePanelRutas()"
+          title="Ver rutas de recogida">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
+            stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="1" y="3" width="15" height="13" rx="2"/>
+            <path d="M16 8h4l3 4v4h-7V8z"/>
+            <circle cx="5.5" cy="18.5" r="2.5"/>
+            <circle cx="18.5" cy="18.5" r="2.5"/>
+          </svg>
+          Rutas
+          <span *ngIf="rutas.length" class="badge-rutas">{{ rutas.length }}</span>
         </button>
       </div>
     </div>
@@ -70,6 +82,16 @@
       <app-incidencias-panel [incidencias]="incidenciasGeoJSON" [capasVisible]="incidenciasCapaVisible"
         (cerrado)="togglePanelIncidencias()" (visibilidadCapa)="onVisibilidadCapaIncidencias($event)"
         (zoomAIncidencia)="onZoomAIncidencia($event)" />
+    </div>
+
+    <!-- Panel rutas (bottom-right, encima del panel incidencias) -->
+    <div class="rutas-overlay" *ngIf="mostrarPanelRutas">
+      <app-rutas-panel
+        [rutas]="rutas"
+        [rutasActivas]="rutasActivas"
+        [rutasCargando]="rutasCargando"
+        (cerrado)="togglePanelRutas()"
+        (toggleRuta)="onToggleRuta($event)" />
     </div>
   </div>
 

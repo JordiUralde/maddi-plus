@@ -18,9 +18,11 @@ import Stroke from 'ol/style/Stroke';
 import Icon from 'ol/style/Icon';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
+import LineString from 'ol/geom/LineString';
 import { circular } from 'ol/geom/Polygon';
 import { easeOut } from 'ol/easing';
 import { ContenedorGeoJSON, IncidenciasGeoJSON, PortalesGeoJSON } from '../models/contenedor.model';
+import { OsrmRouteGeometry } from '../models/ruta.model';
 
 export type ContenedorClickHandler = (
   lon: number,
@@ -50,6 +52,9 @@ export class VisorMapService {
   private portalesHighlightSource = new VectorSource();
   private resultadosSource = new VectorSource();
 
+  private rutaLayer: VectorLayer<VectorSource> | null = null;
+  private rutaParadasLayer: VectorLayer<VectorSource> | null = null;
+
   private pickModeActive = false;
   private pickCallback: ((lon: number, lat: number) => void) | null = null;
   private pintoBusquedaSource = new VectorSource();
@@ -69,11 +74,15 @@ export class VisorMapService {
   // ── Ciclo de vida ─────────────────────────────────────────────────────────
 
   init(target: HTMLElement): void {
+    // Bounding box de la Comunidad de Madrid en EPSG:3857
+    const madridExtent = transformExtent([-4.5775, 39.8853, -3.0517, 40.9177], 'EPSG:4326', 'EPSG:3857');
+
     this.baseLayer = new TileLayer({
       source: new XYZ({
         url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
         attributions: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
       }),
+      extent: madridExtent,
     });
 
     const circleLayer = new VectorLayer({
@@ -410,6 +419,47 @@ export class VisorMapService {
         }
       });
     });
+  }
+
+  // ── Capa de ruta ──────────────────────────────────────────────────────────
+
+  mostrarRuta(geometry: OsrmRouteGeometry, paradas: Array<{ x: number | null; y: number | null }>): void {
+    if (!this.map) return;
+    this.ocultarRuta();
+
+    const coords3857 = geometry.coordinates.map(([lon, lat]) => fromLonLat([lon, lat]));
+    const lineFeature = new Feature(new LineString(coords3857));
+
+    const source = new VectorSource({ features: [lineFeature] });
+    this.rutaLayer = new VectorLayer({
+      source,
+      zIndex: 108,
+      style: new Style({
+        stroke: new Stroke({ color: '#843fa4', width: 3, lineCap: 'round', lineJoin: 'round' }),
+      }),
+    });
+    this.map.addLayer(this.rutaLayer);
+
+    // Puntos blancos en cada parada
+    const paradaFeatures = paradas
+      .filter((p) => p.x != null && p.y != null)
+      .map((p) => new Feature(new Point(fromLonLat([p.y as number, p.x as number]))));
+
+    const extent = source.getExtent();
+    if (extent && isFinite(extent[0])) {
+      this.map.getView().fit(extent, { padding: [60, 60, 60, 60], duration: 700, easing: easeOut });
+    }
+  }
+
+  ocultarRuta(): void {
+    if (this.rutaLayer && this.map) {
+      this.map.removeLayer(this.rutaLayer);
+      this.rutaLayer = null;
+    }
+    if (this.rutaParadasLayer && this.map) {
+      this.map.removeLayer(this.rutaParadasLayer);
+      this.rutaParadasLayer = null;
+    }
   }
 
   // ── Utilidades privadas ───────────────────────────────────────────────────

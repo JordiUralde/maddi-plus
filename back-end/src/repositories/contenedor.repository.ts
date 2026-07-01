@@ -165,30 +165,41 @@ export async function findPortalesByRadio(
   radio: number
 ): Promise<GeoJSONFeatureCollection> {
   const { rows } = await pool.query(
-    `SELECT
+    `WITH punto AS (
+       SELECT ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 25830) AS geom
+     ),
+     portales_radio AS (
+       SELECT p.id, p.geom, p."ROTULO", p."VIA"
+       FROM capa_portales p, punto
+       WHERE p."PCAT2" IS NOT NULL
+         AND TRIM(p."PCAT2") != ''
+         AND ST_DWithin(p.geom, punto.geom, $3)
+     ),
+     vias AS (
+       SELECT DISTINCT "VIA" FROM portales_radio
+     ),
+     calles AS (
+       SELECT seg."VIA", string_agg(seg.rotulo, ' ' ORDER BY seg.min_x) AS calle
+       FROM (
+         SELECT p."VIA",
+                p."ROTULO" AS rotulo,
+                MIN(ST_X(ST_Centroid(p.geom))) AS min_x
+         FROM capa_portales p
+         JOIN vias v ON v."VIA" = p."VIA"
+         WHERE p."PCAT2" IS NULL OR TRIM(p."PCAT2") = ''
+         GROUP BY p."VIA", p."ROTULO"
+       ) seg
+       GROUP BY seg."VIA"
+     )
+     SELECT
        ST_AsGeoJSON(ST_Transform(p.geom, 4326)) AS geometry,
        json_build_object(
-         'id',     p.id,
+         'id', p.id,
          'numero', p."ROTULO",
-         'calle',  (
-           SELECT string_agg(rotulo, ' ' ORDER BY min_x)
-           FROM (
-             SELECT "ROTULO" AS rotulo,
-                    MIN(ST_X(ST_Centroid(geom))) AS min_x
-             FROM capa_portales
-             WHERE "VIA" = p."VIA"
-               AND ("PCAT2" IS NULL OR TRIM("PCAT2") = '')
-             GROUP BY "ROTULO"
-           ) seg
-         )
+         'calle', c.calle
        ) AS properties
-     FROM capa_portales p
-     WHERE ST_DWithin(
-       p.geom,
-       ST_Transform(ST_SetSRID(ST_MakePoint($1, $2), 4326), 25830),
-       $3
-     )
-     AND p."PCAT2" IS NOT NULL AND TRIM(p."PCAT2") != ''`,
+     FROM portales_radio p
+     LEFT JOIN calles c ON c."VIA" = p."VIA"`,
     [lon, lat, radio]
   );
 

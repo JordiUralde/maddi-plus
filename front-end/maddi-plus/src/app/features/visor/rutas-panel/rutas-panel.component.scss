@@ -1,0 +1,227 @@
+:host {
+  display: block;
+}
+
+.rutas-panel {
+  width: 320px;
+  max-height: 520px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(255, 255, 255, 0.96);
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
+  backdrop-filter: blur(6px);
+  overflow: hidden;
+  font-size: 0.8rem;
+  color: #333;
+}
+
+// ── Cabecera ────────────────────────────────────────────────────────────────
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+  flex-shrink: 0;
+}
+
+.panel-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 700;
+  font-size: 0.85rem;
+  color: #1B5E20;
+
+  svg { flex-shrink: 0; }
+}
+
+.badge {
+  background: #1B5E20;
+  color: #fff;
+  border-radius: 10px;
+  padding: 1px 7px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  min-width: 20px;
+  text-align: center;
+}
+
+.btn-cerrar {
+  background: none;
+  border: none;
+  font-size: 0.9rem;
+  color: #888;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: 4px;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.07);
+    color: #333;
+  }
+}
+
+// ── Lista ────────────────────────────────────────────────────────────────────
+.sin-rutas {
+  padding: 20px;
+  text-align: center;
+  color: #888;
+  font-size: 0.78rem;
+}
+
+.lista {
+  flex: 1;
+  overflow-y: auto;
+  padding: 6px 0;
+}
+
+// ── Ruta item ────────────────────────────────────────────────────────────────
+.ruta-item {
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+
+  &:last-child { border-bottom: none; }
+}
+
+.ruta-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+}
+
+.ruta-info {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 4px 6px;
+  transition: background 0.15s;
+
+  &:hover { background: rgba(0, 0, 0, 0.04); }
+}
+
+.ruta-icono {
+  font-size: 1.1rem;
+  flex-shrink: 0;
+}
+
+.ruta-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ruta-nombre {
+  font-weight: 700;
+  font-size: 0.82rem;
+  color: #1B5E20;
+}
+
+.ruta-paradas {
+  font-size: 0.72rem;
+  color: #777;
+}
+
+.chevron {
+  flex-shrink: 0;
+  color: #999;
+  transition: transform 0.2s;
+
+  &.abierto { transform: rotate(180deg); }
+}
+
+// ── Botón activar ────────────────────────────────────────────────────────────
+.btn-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 9px;
+  border: 1.5px solid rgba(27, 94, 32, 0.35);
+  border-radius: 7px;
+  background: transparent;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: #1B5E20;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  flex-shrink: 0;
+
+  &.activo,
+  &:hover:not(:disabled) {
+    background: #1B5E20;
+    color: #fff;
+    border-color: #1B5E20;
+  }
+
+  &:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+}
+
+// ── Spinner ──────────────────────────────────────────────────────────────────
+.spinner {
+  display: inline-block;
+  width: 11px;
+  height: 11px;
+  border: 2px solid rgba(27, 94, 32, 0.25);
+  border-top-color: #1B5E20;
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.btn-toggle.activo .spinner,
+.btn-toggle:hover .spinner {
+  border-color: rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+// ── Lista de paradas ─────────────────────────────────────────────────────────
+.paradas-lista {
+  background: rgba(27, 94, 32, 0.04);
+  border-top: 1px solid rgba(0, 0, 0, 0.06);
+  max-height: 240px;
+  overflow-y: auto;
+  padding: 4px 0;
+}
+
+.parada-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 5px 14px;
+
+  &:not(:last-child) {
+    border-bottom: 1px dashed rgba(0, 0, 0, 0.05);
+  }
+}
+
+.parada-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parada-dir {
+  font-size: 0.76rem;
+  color: #333;
+  line-height: 1.3;
+}
+
+.parada-hora {
+  font-size: 0.69rem;
+  color: #888;
+}

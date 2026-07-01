@@ -19,11 +19,14 @@ import { RadioInfoComponent } from './radio-info/radio-info.component';
 import { ViviendaInfoComponent } from './vivienda-info/vivienda-info.component';
 import { BuscadorComponent } from './buscador/buscador.component';
 import { IncidenciasPanelComponent } from './incidencias-panel/incidencias-panel.component';
+import { RutasPanelComponent } from './rutas-panel/rutas-panel.component';
 import { VisorMapService } from '../../core/services/visor-map.service';
 import { MapaFondoService } from '../../core/services/mapa-fondo.service';
 import { MapaFondo } from '../../core/models/mapa-fondo.model';
 import { GeoLayerService } from '../../core/services/geo-layer.service';
 import { ContenedorService } from '../../core/services/contenedor.service';
+import { RutaService } from '../../core/services/ruta.service';
+import { Ruta } from '../../core/models/ruta.model';
 import {
   ContenedorInfo,
   IncidenciasGeoJSON,
@@ -44,6 +47,7 @@ import { Router } from '@angular/router';
     ViviendaInfoComponent,
     BuscadorComponent,
     IncidenciasPanelComponent,
+    RutasPanelComponent,
   ],
   templateUrl: './visor.component.html',
   styleUrl: './visor.component.scss',
@@ -79,12 +83,17 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   incidenciasGeoJSON: IncidenciasGeoJSON | null = null;
   mostrarPanelIncidencias = false;
   incidenciasCapaVisible = this.leerCookieIncidencias();
-
+  // ── Estado rutas ───────────────────────────────────────────────
+  rutas: Ruta[] = [];
+  rutasActivas = new Set<string>();
+  rutasCargando = new Set<string>();
+  mostrarPanelRutas = false;
   constructor(
     private mapService: VisorMapService,
     private mapaFondoService: MapaFondoService,
     private geoLayerService: GeoLayerService,
     private contenedorService: ContenedorService,
+    private rutaService: RutaService,
     private cdr: ChangeDetectorRef,
     private router: Router,
   ) {}
@@ -96,6 +105,7 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.cargarCapasWMS();
     this.cargarContenedores();
     this.cargarIncidencias();
+    this.cargarRutas();
   }
 
   ngAfterViewInit(): void {
@@ -307,6 +317,43 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     this.mapService.animarZoomACoordenadas(coords[0], coords[1]);
   }
 
+  // ── Rutas ─────────────────────────────────────────────────────────────────
+
+  togglePanelRutas(): void {
+    this.mostrarPanelRutas = !this.mostrarPanelRutas;
+  }
+
+  onToggleRuta(ruta: Ruta): void {
+    if (this.rutasActivas.has(ruta.id)) {
+      // Desactivar — crear nueva referencia para que OnPush la detecte
+      this.rutasActivas = new Set(this.rutasActivas);
+      this.rutasActivas.delete(ruta.id);
+      this.mapService.ocultarRuta();
+      this.cdr.markForCheck();
+      return;
+    }
+    // Activar: desactivar cualquier ruta previa y cargar geometría desde OSRM
+    this.rutasActivas = new Set<string>();
+    this.rutasCargando = new Set(this.rutasCargando);
+    this.rutasCargando.add(ruta.id);
+    this.cdr.markForCheck();
+    this.rutaService.getRouteGeometry(ruta.paradas).subscribe({
+      next: (geometry) => {
+        this.rutasActivas = new Set<string>();
+        this.rutasActivas.add(ruta.id);
+        this.rutasCargando = new Set(this.rutasCargando);
+        this.rutasCargando.delete(ruta.id);
+        this.mapService.mostrarRuta(geometry, ruta.paradas);
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.rutasCargando = new Set(this.rutasCargando);
+        this.rutasCargando.delete(ruta.id);
+        this.cdr.markForCheck();
+      },
+    });
+  }
+
   // ── Carga de datos ────────────────────────────────────────────────────────
 
   private cargarMapasFondo(): void {
@@ -343,6 +390,15 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   private cargarContenedores(): void {
     this.contenedorService.getContenedores().subscribe({
       next: (geojson) => this.mapService.cargarContenedores(geojson),
+    });
+  }
+
+  private cargarRutas(): void {
+    this.rutaService.getRutas().subscribe({
+      next: (rutas) => {
+        this.rutas = rutas;
+        this.cdr.markForCheck();
+      },
     });
   }
 

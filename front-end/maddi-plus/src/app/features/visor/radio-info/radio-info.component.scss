@@ -1,5 +1,5 @@
 .radio-info-panel {
-  width: 300px;
+  width: 560px;
   max-height: 80vh;
   background: #ffffff;
   border-radius: 10px;
@@ -62,13 +62,32 @@
     }
   }
 
-  // ── Detalles del contenedor ───────────────────────────
+  // ── Panel body (dos columnas) ────────────────────────
+  .panel-body {
+    display: flex;
+    flex-direction: row;
+    flex: 1;
+    overflow: hidden;
+  }
+
+  // ── Columna izquierda: detalles contenedor ────────────
   .contenedor-detalles {
+    width: 260px;
+    flex-shrink: 0;
     padding: 0 12px 8px;
-    border-bottom: 1px solid #eee;
+    border-right: 1px solid #eee;
+    overflow-y: auto;
     display: flex;
     flex-direction: column;
     gap: 0;
+  }
+
+  // ── Columna derecha: radio + portales ─────────────────
+  .radio-columna {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
   }
 
   .detalle-grupo {
@@ -135,6 +154,7 @@
   .radio-control {
     padding: 10px 12px;
     border-bottom: 1px solid #eee;
+    flex-shrink: 0;
 
     label {
       display: block;
@@ -181,6 +201,7 @@
   .portal-lista {
     overflow-y: auto;
     flex: 1;
+    min-height: 0;
     padding: 4px 12px 12px;
 
     .spinner-wrap {

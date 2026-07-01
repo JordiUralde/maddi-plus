@@ -23,10 +23,15 @@ export class ViviendaInfoComponent {
 
   @Output() cerrado = new EventEmitter<void>();
 
+  private readonly camposVisibles: { key: string; label: string }[] = [
+    { key: '45_car', label: 'id' },
+    { key: '31_pc', label: 'Referencia catastral' },
+  ];
+
   propiedades(record: Record<string, unknown>): Array<{ k: string; v: string }> {
-    return Object.entries(record)
-      .filter(([, v]) => v !== null && v !== undefined && v !== '')
-      .map(([k, v]) => ({ k, v: String(v) }));
+    return this.camposVisibles
+      .filter(({ key }) => record[key] !== null && record[key] !== undefined && record[key] !== '')
+      .map(({ key, label }) => ({ k: label, v: String(record[key]) }));
   }
 
   portalTitulo(): string {
