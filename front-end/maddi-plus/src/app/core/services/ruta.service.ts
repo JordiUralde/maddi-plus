@@ -33,7 +33,12 @@ export class RutaService {
           }
           mapa.get(id)!.paradas.push(parada);
         }
-        return Array.from(mapa.values());
+        return Array.from(mapa.values()).map((ruta) => ({
+          ...ruta,
+          paradas: ruta.paradas
+            .filter((p) => p.numero_paradas != null)
+            .sort((a, b) => Number(a.numero_paradas) - Number(b.numero_paradas)),
+        }));
       }),
     );
   }
@@ -45,7 +50,10 @@ export class RutaService {
    * En caso de error, devuelve una línea recta entre las paradas como fallback.
    */
   getRouteGeometry(paradas: RutaParada[]): Observable<OsrmRouteGeometry> {
-    const valid = paradas.filter((p) => p.x != null && p.y != null);
+    const valid = paradas
+      .filter((p) => p.x != null && p.y != null && p.numero_paradas != null)
+      .sort((a, b) => Number(a.numero_paradas) - Number(b.numero_paradas));
+
     if (valid.length < 2) {
       return of({ type: 'LineString', coordinates: [] } as OsrmRouteGeometry);
     }

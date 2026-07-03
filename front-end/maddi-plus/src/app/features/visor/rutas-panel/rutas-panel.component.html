@@ -61,8 +61,11 @@
 
       <!-- Lista de paradas expandible -->
       <div class="paradas-lista" *ngIf="isExpandida(ruta)">
-        <div *ngFor="let parada of ruta.paradas" class="parada-item">
+        <div *ngFor="let parada of ruta.paradas" class="parada-item parada-clickable"
+             (click)="paradaClick.emit(parada)"
+             title="Centrar mapa en esta parada">
           <div class="parada-info">
+            <span class="parada-num" *ngIf="parada.numero_paradas != null">{{ parada.numero_paradas }}</span>
             <span class="parada-dir">{{ parada.direccion ?? '—' }}</span>
             <span class="parada-hora" *ngIf="parada.programado_en">
               🕐 {{ parada.programado_en }}

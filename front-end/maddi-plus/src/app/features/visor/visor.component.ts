@@ -26,7 +26,7 @@ import { MapaFondo } from '../../core/models/mapa-fondo.model';
 import { GeoLayerService } from '../../core/services/geo-layer.service';
 import { ContenedorService } from '../../core/services/contenedor.service';
 import { RutaService } from '../../core/services/ruta.service';
-import { Ruta } from '../../core/models/ruta.model';
+import { Ruta, RutaParada } from '../../core/models/ruta.model';
 import {
   ContenedorInfo,
   IncidenciasGeoJSON,
@@ -321,6 +321,9 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
 
   togglePanelRutas(): void {
     this.mostrarPanelRutas = !this.mostrarPanelRutas;
+    if (!this.mostrarPanelRutas) {
+      this.mapService.ocultarParadaSeleccionada();
+    }
   }
 
   onToggleRuta(ruta: Ruta): void {
@@ -354,6 +357,25 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     });
   }
 
+  onParadaClick(parada: RutaParada): void {
+    if (parada.y == null || parada.x == null) return;
+
+    const routeId = parada.id_parada ?? 'sin-id';
+    const routeIsActive = this.rutasActivas.has(routeId);
+
+    if (!routeIsActive) {
+      // Activar la ruta primero; el fit de mostrarRuta centra la vista sobre ella
+      const ruta = this.rutas.find(r => r.id === routeId);
+      if (ruta) this.onToggleRuta(ruta);
+      this.mapService.mostrarParadaSeleccionada(parada.y, parada.x);
+      return;
+    }
+
+    // Ruta ya visible: navegar directamente al punto
+    this.mapService.animarZoomACoordenadas(parada.y, parada.x);
+    this.mapService.mostrarParadaSeleccionada(parada.y, parada.x);
+  }
+
   // ── Carga de datos ────────────────────────────────────────────────────────
 
   private cargarMapasFondo(): void {
@@ -361,8 +383,12 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (mapas) => {
         this.mapasFondo = mapas;
         if (mapas.length > 0) {
-          this.mapaActivo = mapas[0];
-          this.mapService.setBaseLayerUrl(mapas[0].url);
+          const carto = mapas.find((m) =>
+            m.url.includes('carto') || m.nombre.toLowerCase().includes('carto'),
+          );
+          const mapaDefecto = carto ?? mapas[0];
+          this.mapaActivo = mapaDefecto;
+          this.mapService.setBaseLayerUrl(mapaDefecto.url);
         }
         this.cargando = false;
         this.cdr.markForCheck();

@@ -16,13 +16,14 @@ import CircleStyle from 'ol/style/Circle';
 import Fill from 'ol/style/Fill';
 import Stroke from 'ol/style/Stroke';
 import Icon from 'ol/style/Icon';
+import Text from 'ol/style/Text';
 import Feature from 'ol/Feature';
 import Point from 'ol/geom/Point';
 import LineString from 'ol/geom/LineString';
 import { circular } from 'ol/geom/Polygon';
 import { easeOut } from 'ol/easing';
 import { ContenedorGeoJSON, IncidenciasGeoJSON, PortalesGeoJSON } from '../models/contenedor.model';
-import { OsrmRouteGeometry } from '../models/ruta.model';
+import { OsrmRouteGeometry, RutaParada } from '../models/ruta.model';
 
 export type ContenedorClickHandler = (
   lon: number,
@@ -46,6 +47,7 @@ export class VisorMapService {
   private map!: OlMap;
   private baseLayer!: TileLayer<XYZ>;
   private wmsLayers = new globalThis.Map<string, TileLayer<TileWMS>>();
+  private readonly resultadosStyleCache = new globalThis.Map<string, Style[]>();
   private contenedoresLayer!: VectorLayer<VectorSource>;
   private incidenciasLayer: VectorLayer<VectorSource> | null = null;
   private circleSource = new VectorSource();
@@ -54,6 +56,7 @@ export class VisorMapService {
 
   private rutaLayer: VectorLayer<VectorSource> | null = null;
   private rutaParadasLayer: VectorLayer<VectorSource> | null = null;
+  private paradaSeleccionadaLayer: VectorLayer<VectorSource> | null = null;
 
   private pickModeActive = false;
   private pickCallback: ((lon: number, lat: number) => void) | null = null;
@@ -79,10 +82,10 @@ export class VisorMapService {
 
     this.baseLayer = new TileLayer({
       source: new XYZ({
-        url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-        attributions: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
+        crossOrigin: 'anonymous',
       }),
       extent: madridExtent,
+      preload: 1,
     });
 
     const circleLayer = new VectorLayer({
@@ -125,16 +128,7 @@ export class VisorMapService {
     const resultadosLayer = new VectorLayer({
       source: this.resultadosSource,
       zIndex: 110,
-      style: (feature) => [
-        this.resultadosOuterStyle,
-        new Style({
-          image: new CircleStyle({
-            radius: 7,
-            fill: new Fill({ color: this.colorPorFraccion(feature.get('fraccion') as string) }),
-            stroke: new Stroke({ color: '#ffffff', width: 2 }),
-          }),
-        }),
-      ],
+      style: (feature) => this.getResultadoStyle(feature.get('fraccion') as string),
     });
 
     this.map = new OlMap({
@@ -147,6 +141,7 @@ export class VisorMapService {
         zoom: 13,
         minZoom: 12,
         maxZoom: 19,
+        constrainResolution: true,
       }),
     });
   }
@@ -163,13 +158,7 @@ export class VisorMapService {
   }
 
   setBaseLayerUrl(url: string): void {
-    if (!this.map) return;
-    this.baseLayer.setSource(
-      new XYZ({
-        url,
-        attributions: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',
-      }),
-    );
+    this.baseLayer?.getSource()?.setUrl(url);
   }
 
   // ── Capas WMS ─────────────────────────────────────────────────────────────
@@ -181,10 +170,15 @@ export class VisorMapService {
         url: wmsUrl,
         params: { LAYERS: name, TILED: true, FORMAT: 'image/png', TRANSPARENT: true },
         serverType: 'geoserver',
+        crossOrigin: 'anonymous',
       }),
       visible: true,
       zIndex,
     });
+    // No pedir tiles WMS nuevos mientras el usuario hace zoom/pan con la rueda;
+    // OL muestra los tiles anteriores escalados y carga los correctos al parar.
+    layer.set('updateWhileAnimating', false);
+    layer.set('updateWhileInteracting', false);
     this.map.addLayer(layer);
     this.wmsLayers.set(name, layer);
   }
@@ -215,6 +209,9 @@ export class VisorMapService {
    */
   cargarContenedores(geojson: ContenedorGeoJSON): void {
     if (!this.map) return;
+    if (this.contenedoresLayer) {
+      this.map.removeLayer(this.contenedoresLayer);
+    }
     const features = new GeoJSON().readFeatures(geojson, {
       dataProjection: 'EPSG:4326',
       featureProjection: 'EPSG:3857',
@@ -274,7 +271,7 @@ export class VisorMapService {
   /** Actualiza el polígono circular en el mapa (dentro del Angular zone). */
   actualizarCirculo(lon: number, lat: number, radio: number): void {
     this.circleSource.clear();
-    const polygon = circular([lon, lat], radio, 64);
+    const polygon = circular([lon, lat], radio, 32);
     polygon.transform('EPSG:4326', 'EPSG:3857');
     this.circleSource.addFeature(new Feature(polygon));
   }
@@ -298,6 +295,10 @@ export class VisorMapService {
 
   clearSeleccion(): void {
     this.circleSource.clear();
+    this.portalesHighlightSource.clear();
+  }
+
+  clearPortalesHighlight(): void {
     this.portalesHighlightSource.clear();
   }
 
@@ -369,15 +370,25 @@ export class VisorMapService {
   ): void {
     this.ngZone.runOutsideAngular(() => {
       let rafPending = false;
+      let lastPx = -999;
+      let lastPy = -999;
       this.map.on('pointermove', (evt) => {
         if (rafPending) return;
+        const px = evt.pixel[0];
+        const py = evt.pixel[1];
+        const dx = px - lastPx;
+        const dy = py - lastPy;
+        if (dx * dx + dy * dy < 4) return; // omitir si el ratón se movió menos de 2px
         rafPending = true;
-        const pixel = evt.pixel.slice() as [number, number];
+        lastPx = px;
+        lastPy = py;
+        const pixel = [px, py] as [number, number];
         requestAnimationFrame(() => {
           rafPending = false;
           if (!this.contenedoresLayer) return;
           const hit = this.map.hasFeatureAtPixel(pixel, {
             layerFilter: (l) => l === this.contenedoresLayer,
+            hitTolerance: 4,
           });
           this.map.getTargetElement().style.cursor = hit ? 'pointer' : '';
         });
@@ -398,6 +409,7 @@ export class VisorMapService {
 
         const feature = this.map.forEachFeatureAtPixel(evt.pixel, (f) => f, {
           layerFilter: (l) => l === this.contenedoresLayer,
+          hitTolerance: 6,
         });
 
         if (feature) {
@@ -423,7 +435,7 @@ export class VisorMapService {
 
   // ── Capa de ruta ──────────────────────────────────────────────────────────
 
-  mostrarRuta(geometry: OsrmRouteGeometry, paradas: Array<{ x: number | null; y: number | null }>): void {
+  mostrarRuta(geometry: OsrmRouteGeometry, paradas: RutaParada[]): void {
     if (!this.map) return;
     this.ocultarRuta();
 
@@ -440,10 +452,77 @@ export class VisorMapService {
     });
     this.map.addLayer(this.rutaLayer);
 
-    // Puntos blancos en cada parada
-    const paradaFeatures = paradas
-      .filter((p) => p.x != null && p.y != null)
-      .map((p) => new Feature(new Point(fromLonLat([p.y as number, p.x as number]))));
+    // Flechas de dirección cada ~500 m sobre la geometría de la ruta
+    const ARROW_INTERVAL = 750;
+    const arrowFeatures: Feature[] = [];
+    let accumulated = 0;
+
+    const makeArrowFeature = (coord: number[], bearing: number): Feature => {
+      const af = new Feature(new Point(coord));
+      af.setStyle(new Style({
+        renderer: (pixelCoords, state) => {
+          const [px, py] = pixelCoords as number[];
+          const ctx = state.context;
+          ctx.save();
+          ctx.translate(Math.round(px), Math.round(py));
+          ctx.rotate(bearing);
+          ctx.strokeStyle = '#1a1a1a';
+          ctx.lineWidth = 2;
+          ctx.lineCap = 'round';
+          ctx.lineJoin = 'round';
+          ctx.beginPath();
+          ctx.moveTo(-7, 0);
+          ctx.lineTo(2, 0);
+          ctx.stroke();
+          ctx.beginPath();
+          ctx.moveTo(-1, -4);
+          ctx.lineTo(7, 0);
+          ctx.lineTo(-1, 4);
+          ctx.stroke();
+          ctx.restore();
+        },
+      }));
+      return af;
+    };
+
+    for (let i = 1; i < coords3857.length; i++) {
+      const prev = coords3857[i - 1];
+      const curr = coords3857[i];
+      const dx = curr[0] - prev[0];
+      const dy = curr[1] - prev[1];
+      const segLen = Math.sqrt(dx * dx + dy * dy);
+      const bearing = Math.atan2(-dy, dx);
+
+      let remaining = segLen;
+      let distIntoSeg = ARROW_INTERVAL - accumulated;
+
+      while (distIntoSeg <= remaining) {
+        const t = distIntoSeg / segLen;
+        const coord = [prev[0] + dx * t, prev[1] + dy * t];
+        arrowFeatures.push(makeArrowFeature(coord, bearing));
+        distIntoSeg += ARROW_INTERVAL;
+      }
+
+      accumulated = (accumulated + segLen) % ARROW_INTERVAL;
+    }
+
+    // Punto de inicio (verde) y fin (rojo)
+    const endpointFeatures: Feature[] = [];
+    if (coords3857.length >= 2) {
+      const makeEndpoint = (coord: number[], color: string) => {
+        const f = new Feature(new Point(coord));
+        f.setStyle(new Style({
+          image: new CircleStyle({ radius: 7, fill: new Fill({ color }), stroke: new Stroke({ color: '#ffffff', width: 2 }) }),
+        }));
+        return f;
+      };
+      endpointFeatures.push(makeEndpoint(coords3857[0], '#2e7d32'));
+      endpointFeatures.push(makeEndpoint(coords3857[coords3857.length - 1], '#c62828'));
+    }
+
+    const paradaSource = new VectorSource({ features: [...endpointFeatures, ...arrowFeatures] });
+    this.rutaParadasLayer = new VectorLayer({ source: paradaSource, zIndex: 109 });
+    this.map.addLayer(this.rutaParadasLayer);
 
     const extent = source.getExtent();
     if (extent && isFinite(extent[0])) {
@@ -462,7 +541,50 @@ export class VisorMapService {
     }
   }
 
+  mostrarParadaSeleccionada(lon: number, lat: number): void {
+    if (!this.map) return;
+    if (this.paradaSeleccionadaLayer) {
+      this.map.removeLayer(this.paradaSeleccionadaLayer);
+    }
+    const f = new Feature(new Point(fromLonLat([lon, lat])));
+    f.setStyle(new Style({
+      image: new CircleStyle({
+        radius: 5,
+        fill: new Fill({ color: '#843fa4' }),
+        stroke: new Stroke({ color: '#ffffff', width: 2 }),
+      }),
+    }));
+    this.paradaSeleccionadaLayer = new VectorLayer({
+      source: new VectorSource({ features: [f] }),
+      zIndex: 120,
+    });
+    this.map.addLayer(this.paradaSeleccionadaLayer);
+  }
+
+  ocultarParadaSeleccionada(): void {
+    if (this.paradaSeleccionadaLayer && this.map) {
+      this.map.removeLayer(this.paradaSeleccionadaLayer);
+      this.paradaSeleccionadaLayer = null;
+    }
+  }
+
   // ── Utilidades privadas ───────────────────────────────────────────────────
+
+  private getResultadoStyle(fraccion: string): Style[] {
+    if (!this.resultadosStyleCache.has(fraccion)) {
+      this.resultadosStyleCache.set(fraccion, [
+        this.resultadosOuterStyle,
+        new Style({
+          image: new CircleStyle({
+            radius: 7,
+            fill: new Fill({ color: this.colorPorFraccion(fraccion) }),
+            stroke: new Stroke({ color: '#ffffff', width: 2 }),
+          }),
+        }),
+      ]);
+    }
+    return this.resultadosStyleCache.get(fraccion)!;
+  }
 
   private colorPorFraccion(fraccion: string): string {
     switch (fraccion) {

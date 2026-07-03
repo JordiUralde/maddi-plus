@@ -7,7 +7,7 @@ import {
   OnChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Ruta } from '../../../core/models/ruta.model';
+import { Ruta, RutaParada } from '../../../core/models/ruta.model';
 
 @Component({
   selector: 'app-rutas-panel',
@@ -24,6 +24,7 @@ export class RutasPanelComponent implements OnChanges {
 
   @Output() cerrado = new EventEmitter<void>();
   @Output() toggleRuta = new EventEmitter<Ruta>();
+  @Output() paradaClick = new EventEmitter<RutaParada>();
 
   expandidas = new Set<string>();
 
