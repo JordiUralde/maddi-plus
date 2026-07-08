@@ -26,6 +26,12 @@
   flex-shrink: 0;
 }
 
+.panel-title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 .panel-title {
   display: flex;
   align-items: center;
@@ -35,6 +41,23 @@
   color: #1B5E20;
 
   svg { flex-shrink: 0; }
+}
+
+.fecha-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.7rem;
+  color: #666;
+
+  input {
+    border: 1px solid rgba(27, 94, 32, 0.22);
+    border-radius: 7px;
+    padding: 5px 7px;
+    font: inherit;
+    color: #1f1f1f;
+    background: #fff;
+  }
 }
 
 .badge {
@@ -90,6 +113,29 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
+}
+
+.estado-row {
+  padding: 0 12px 8px;
+}
+
+.estado-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.68rem;
+  font-weight: 700;
+
+  &.completa {
+    background: rgba(27, 94, 32, 0.12);
+    color: #1b5e20;
+  }
+
+  &.error {
+    background: rgba(132, 63, 164, 0.14);
+    color: #6d2e87;
+  }
 }
 
 .ruta-info {
@@ -197,6 +243,30 @@
   padding: 4px 0;
 }
 
+.version-block {
+  padding: 6px 0 2px;
+}
+
+.version-tag {
+  margin: 0 14px 4px;
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 3px 8px;
+  font-size: 0.68rem;
+  font-weight: 700;
+
+  &.version-actual {
+    background: rgba(132, 63, 164, 0.12);
+    color: #843fa4;
+  }
+
+  &.version-historica {
+    background: rgba(129, 199, 132, 0.2);
+    color: #2e7d32;
+  }
+}
+
 .parada-item {
   display: flex;
   align-items: flex-start;
@@ -234,6 +304,10 @@
   margin-right: 4px;
 }
 
+.parada-num.historical {
+  background: #81c784;
+}
+
 .parada-info {
   flex: 1;
   display: flex;
@@ -250,4 +324,28 @@
 .parada-hora {
   font-size: 0.69rem;
   color: #888;
+}
+
+.diferencias {
+  padding: 8px 14px 10px;
+  border-top: 1px dashed rgba(0, 0, 0, 0.08);
+}
+
+.diferencias-title {
+  font-size: 0.69rem;
+  font-weight: 700;
+  color: #6d2e87;
+  margin-bottom: 4px;
+}
+
+.diferencia-item {
+  font-size: 0.7rem;
+  color: #5f5f5f;
+  line-height: 1.35;
+}
+
+.sin-historica {
+  padding: 0 14px 8px;
+  font-size: 0.7rem;
+  color: #777;
 }

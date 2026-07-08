@@ -7,7 +7,7 @@ import {
   OnChanges,
 } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { Ruta, RutaParada } from '../../../core/models/ruta.model';
+import { RutaComparada, RutaParada } from '../../../core/models/ruta.model';
 
 @Component({
   selector: 'app-rutas-panel',
@@ -18,12 +18,14 @@ import { Ruta, RutaParada } from '../../../core/models/ruta.model';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RutasPanelComponent implements OnChanges {
-  @Input() rutas: Ruta[] = [];
+  @Input() rutas: RutaComparada[] = [];
   @Input() rutasActivas: Set<string> = new Set();
   @Input() rutasCargando: Set<string> = new Set();
+  @Input() fechaSeleccionada = '';
 
   @Output() cerrado = new EventEmitter<void>();
-  @Output() toggleRuta = new EventEmitter<Ruta>();
+  @Output() fechaCambiada = new EventEmitter<string>();
+  @Output() toggleRuta = new EventEmitter<RutaComparada>();
   @Output() paradaClick = new EventEmitter<RutaParada>();
 
   expandidas = new Set<string>();
@@ -34,7 +36,7 @@ export class RutasPanelComponent implements OnChanges {
     this.expandidas.forEach((id) => { if (!ids.has(id)) this.expandidas.delete(id); });
   }
 
-  toggleExpandida(ruta: Ruta): void {
+  toggleExpandida(ruta: RutaComparada): void {
     if (this.expandidas.has(ruta.id)) {
       this.expandidas.delete(ruta.id);
     } else {
@@ -42,19 +44,24 @@ export class RutasPanelComponent implements OnChanges {
     }
   }
 
-  isExpandida(ruta: Ruta): boolean {
+  isExpandida(ruta: RutaComparada): boolean {
     return this.expandidas.has(ruta.id);
   }
 
-  isActiva(ruta: Ruta): boolean {
+  isActiva(ruta: RutaComparada): boolean {
     return this.rutasActivas.has(ruta.id);
   }
 
-  isCargando(ruta: Ruta): boolean {
+  isCargando(ruta: RutaComparada): boolean {
     return this.rutasCargando.has(ruta.id);
   }
 
-  trackById(_: number, ruta: Ruta): string {
+  trackById(_: number, ruta: RutaComparada): string {
     return ruta.id;
+  }
+
+  cambiarFecha(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    this.fechaCambiada.emit(input.value);
   }
 }

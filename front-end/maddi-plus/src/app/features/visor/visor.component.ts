@@ -26,7 +26,8 @@ import { MapaFondo } from '../../core/models/mapa-fondo.model';
 import { GeoLayerService } from '../../core/services/geo-layer.service';
 import { ContenedorService } from '../../core/services/contenedor.service';
 import { RutaService } from '../../core/services/ruta.service';
-import { Ruta, RutaParada } from '../../core/models/ruta.model';
+import { OsrmRouteGeometry, RutaComparada, RutaParada } from '../../core/models/ruta.model';
+import { forkJoin, of } from 'rxjs';
 import {
   ContenedorInfo,
   IncidenciasGeoJSON,
@@ -84,10 +85,11 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   mostrarPanelIncidencias = false;
   incidenciasCapaVisible = this.leerCookieIncidencias();
   // ── Estado rutas ───────────────────────────────────────────────
-  rutas: Ruta[] = [];
+  rutas: RutaComparada[] = [];
   rutasActivas = new Set<string>();
   rutasCargando = new Set<string>();
   mostrarPanelRutas = false;
+  fechaRutas = this.obtenerFechaLocal();
   constructor(
     private mapService: VisorMapService,
     private mapaFondoService: MapaFondoService,
@@ -326,27 +328,35 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  onToggleRuta(ruta: Ruta): void {
+  onToggleRuta(ruta: RutaComparada): void {
     if (this.rutasActivas.has(ruta.id)) {
       // Desactivar — crear nueva referencia para que OnPush la detecte
       this.rutasActivas = new Set(this.rutasActivas);
       this.rutasActivas.delete(ruta.id);
-      this.mapService.ocultarRuta();
+      this.mapService.ocultarRuta(ruta.id);
       this.cdr.markForCheck();
       return;
     }
-    // Activar: desactivar cualquier ruta previa y cargar geometría desde OSRM
+    // Activar: desactivar cualquier ruta previa y cargar ambas versiones en el mapa
     this.rutasActivas = new Set<string>();
     this.rutasCargando = new Set(this.rutasCargando);
     this.rutasCargando.add(ruta.id);
     this.cdr.markForCheck();
-    this.rutaService.getRouteGeometry(ruta.paradas).subscribe({
-      next: (geometry) => {
+    const actual$ = this.rutaService.getRouteGeometry(ruta.actual.paradas);
+    const historica$ = ruta.historica
+      ? this.rutaService.getRouteGeometry(ruta.historica.paradas)
+      : of({ type: 'LineString', coordinates: [] } as OsrmRouteGeometry);
+
+    forkJoin({ actual: actual$, historica: historica$ }).subscribe({
+      next: ({ actual, historica }) => {
         this.rutasActivas = new Set<string>();
         this.rutasActivas.add(ruta.id);
         this.rutasCargando = new Set(this.rutasCargando);
         this.rutasCargando.delete(ruta.id);
-        this.mapService.mostrarRuta(geometry, ruta.paradas);
+        this.mapService.mostrarRuta(actual, ruta.actual.paradas, '#843fa4', `${ruta.id}:actual`);
+        if (ruta.historica) {
+          this.mapService.mostrarRuta(historica, ruta.historica.paradas, '#81c784', `${ruta.id}:historica`);
+        }
         this.cdr.markForCheck();
       },
       error: () => {
@@ -420,12 +430,26 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   private cargarRutas(): void {
-    this.rutaService.getRutas().subscribe({
+    this.rutaService.getRutas(this.fechaRutas).subscribe({
       next: (rutas) => {
         this.rutas = rutas;
+        this.rutasActivas.clear();
+        this.mapService.ocultarRuta();
         this.cdr.markForCheck();
       },
     });
+  }
+
+  onFechaRutasCambiada(fecha: string): void {
+    if (!fecha || fecha === this.fechaRutas) return;
+    this.fechaRutas = fecha;
+    this.cargarRutas();
+  }
+
+  private obtenerFechaLocal(): string {
+    const fecha = new Date();
+    const offset = fecha.getTimezoneOffset() * 60000;
+    return new Date(fecha.getTime() - offset).toISOString().slice(0, 10);
   }
 
   private buscarPortales(lon: number, lat: number, radio: number): void {

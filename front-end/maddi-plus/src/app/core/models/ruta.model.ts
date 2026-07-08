@@ -18,6 +18,21 @@ export interface Ruta {
   paradas: RutaParada[];
 }
 
+export interface RutaVersion {
+  id: string;
+  nombre: string;
+  paradas: RutaParada[];
+}
+
+export interface RutaComparada {
+  id: string;
+  nombre: string;
+  estado: 'completa' | 'error';
+  diferencias: string[];
+  actual: RutaVersion;
+  historica: RutaVersion | null;
+}
+
 export interface OsrmRouteGeometry {
   type: 'LineString';
   coordinates: [number, number][];

@@ -3,11 +3,16 @@ import { HttpClient } from '@angular/common/http';
 import { Observable, of } from 'rxjs';
 import { map, catchError } from 'rxjs/operators';
 import { environment } from '../../../environments/environment';
-import { Ruta, RutaParada, OsrmRouteGeometry } from '../models/ruta.model';
+import { RutaComparada, RutaParada, OsrmRouteGeometry } from '../models/ruta.model';
 
 interface OsrmResponse {
   code: string;
   routes: Array<{ geometry: OsrmRouteGeometry; distance: number; duration: number }>;
+}
+
+interface RutaResponse {
+  fecha: string;
+  rutas: RutaComparada[];
 }
 
 @Injectable({ providedIn: 'root' })
@@ -17,29 +22,11 @@ export class RutaService {
 
   constructor(private http: HttpClient) {}
 
-  /** Devuelve todas las rutas agrupadas por id_parada, con el nombre de nombres_ruta. */
-  getRutas(): Observable<Ruta[]> {
-    return this.http.get<RutaParada[]>(this.url).pipe(
-      map((paradas) => {
-        const mapa = new Map<string, Ruta>();
-        for (const parada of paradas) {
-          const id = parada.id_parada ?? 'sin-id';
-          if (!mapa.has(id)) {
-            mapa.set(id, {
-              id,
-              nombre: parada.nombre_ruta ?? id,
-              paradas: [],
-            });
-          }
-          mapa.get(id)!.paradas.push(parada);
-        }
-        return Array.from(mapa.values()).map((ruta) => ({
-          ...ruta,
-          paradas: ruta.paradas
-            .filter((p) => p.numero_paradas != null)
-            .sort((a, b) => Number(a.numero_paradas) - Number(b.numero_paradas)),
-        }));
-      }),
+  /** Devuelve las rutas comparadas para una fecha concreta. */
+  getRutas(fecha: string): Observable<RutaComparada[]> {
+    return this.http.get<RutaResponse>(`${this.url}?fecha=${encodeURIComponent(fecha)}`).pipe(
+      map((response) => response.rutas),
+      catchError(() => of([])),
     );
   }
 

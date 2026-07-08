@@ -2,17 +2,23 @@
 
   <!-- Cabecera -->
   <div class="panel-header">
-    <span class="panel-title">
-      <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="2.2"
-           stroke-linecap="round" stroke-linejoin="round">
-        <circle cx="12" cy="12" r="10"/>
-        <polyline points="8 12 12 16 16 12"/>
-        <line x1="12" y1="8" x2="12" y2="16"/>
-      </svg>
-      Rutas de recogida
-      <span class="badge">{{ rutas.length }}</span>
-    </span>
+    <div class="panel-title-block">
+      <span class="panel-title">
+        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24"
+             fill="none" stroke="currentColor" stroke-width="2.2"
+             stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="8 12 12 16 16 12"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+        </svg>
+        Rutas de recogida
+        <span class="badge">{{ rutas.length }}</span>
+      </span>
+      <label class="fecha-label">
+        <span>Buscar por día</span>
+        <input type="date" [value]="fechaSeleccionada" (change)="cambiarFecha($event)" />
+      </label>
+    </div>
     <button class="btn-cerrar" (click)="cerrado.emit()" title="Cerrar">✕</button>
   </div>
 
@@ -31,7 +37,7 @@
           <span class="ruta-icono">🚛</span>
           <div class="ruta-meta">
             <span class="ruta-nombre">{{ ruta.nombre }}</span>
-            <span class="ruta-paradas">{{ ruta.paradas.length }} paradas</span>
+            <span class="ruta-paradas">{{ ruta.actual.paradas.length }} paradas actuales · {{ ruta.historica ? ruta.historica.paradas.length : 0 }} históricas</span>
           </div>
           <svg class="chevron" [class.abierto]="isExpandida(ruta)"
                xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
@@ -59,18 +65,52 @@
         </button>
       </div>
 
+      <div class="estado-row">
+        <span class="estado-chip" [class.completa]="ruta.estado === 'completa'" [class.error]="ruta.estado === 'error'">
+          {{ ruta.estado === 'completa' ? 'Ruta completa' : 'Ruta con error' }}
+        </span>
+      </div>
+
       <!-- Lista de paradas expandible -->
       <div class="paradas-lista" *ngIf="isExpandida(ruta)">
-        <div *ngFor="let parada of ruta.paradas" class="parada-item parada-clickable"
-             (click)="paradaClick.emit(parada)"
-             title="Centrar mapa en esta parada">
-          <div class="parada-info">
-            <span class="parada-num" *ngIf="parada.numero_paradas != null">{{ parada.numero_paradas }}</span>
-            <span class="parada-dir">{{ parada.direccion ?? '—' }}</span>
-            <span class="parada-hora" *ngIf="parada.programado_en">
-              🕐 {{ parada.programado_en }}
-            </span>
+        <div class="version-block">
+          <div class="version-tag version-actual">Color actual</div>
+          <div *ngFor="let parada of ruta.actual.paradas" class="parada-item parada-clickable"
+               (click)="paradaClick.emit(parada)"
+               title="Centrar mapa en esta parada">
+            <div class="parada-info">
+              <span class="parada-num" *ngIf="parada.numero_paradas != null">{{ parada.numero_paradas }}</span>
+              <span class="parada-dir">{{ parada.direccion ?? '—' }}</span>
+              <span class="parada-hora" *ngIf="parada.programado_en">
+                🕐 {{ parada.programado_en }}
+              </span>
+            </div>
           </div>
+        </div>
+
+        <div class="version-block">
+          <div class="version-tag version-historica">Color histórico</div>
+          <div *ngIf="ruta.historica; else sinHistorica">
+            <div *ngFor="let parada of ruta.historica.paradas" class="parada-item parada-clickable"
+                 (click)="paradaClick.emit(parada)"
+                 title="Centrar mapa en esta parada">
+              <div class="parada-info">
+                <span class="parada-num historical" *ngIf="parada.numero_paradas != null">{{ parada.numero_paradas }}</span>
+                <span class="parada-dir">{{ parada.direccion ?? '—' }}</span>
+                <span class="parada-hora" *ngIf="parada.programado_en">
+                  🕐 {{ parada.programado_en }}
+                </span>
+              </div>
+            </div>
+          </div>
+          <ng-template #sinHistorica>
+            <div class="sin-historica">No hay ruta histórica para la fecha seleccionada.</div>
+          </ng-template>
+        </div>
+
+        <div class="diferencias" *ngIf="ruta.diferencias.length">
+          <div class="diferencias-title">Diferencias detectadas</div>
+          <div *ngFor="let diferencia of ruta.diferencias" class="diferencia-item">{{ diferencia }}</div>
         </div>
       </div>
 

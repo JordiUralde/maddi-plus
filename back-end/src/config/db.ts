@@ -11,7 +11,9 @@ export const pool = new Pool({
   idleTimeoutMillis: 30000,
   connectionTimeoutMillis: 2000,
 });
-
+pool.connect()
+  .then(() => console.log('BBDD conectada'))
+  .catch((err) => console.error('[DB] Connection error', err));
 pool.on('error', (err) => {
   console.error('[DB] Unexpected pool error', err);
 });

@@ -90,7 +90,9 @@
         [rutas]="rutas"
         [rutasActivas]="rutasActivas"
         [rutasCargando]="rutasCargando"
+        [fechaSeleccionada]="fechaRutas"
         (cerrado)="togglePanelRutas()"
+        (fechaCambiada)="onFechaRutasCambiada($event)"
         (toggleRuta)="onToggleRuta($event)"
         (paradaClick)="onParadaClick($event)" />
     </div>

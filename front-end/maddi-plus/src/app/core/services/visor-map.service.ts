@@ -57,6 +57,7 @@ export class VisorMapService {
   private rutaLayer: VectorLayer<VectorSource> | null = null;
   private rutaParadasLayer: VectorLayer<VectorSource> | null = null;
   private paradaSeleccionadaLayer: VectorLayer<VectorSource> | null = null;
+  private readonly rutasRenderizadas = new globalThis.Map<string, { rutaLayer: VectorLayer<VectorSource>; rutaParadasLayer: VectorLayer<VectorSource> }>();
 
   private pickModeActive = false;
   private pickCallback: ((lon: number, lat: number) => void) | null = null;
@@ -435,22 +436,27 @@ export class VisorMapService {
 
   // ── Capa de ruta ──────────────────────────────────────────────────────────
 
-  mostrarRuta(geometry: OsrmRouteGeometry, paradas: RutaParada[]): void {
+  mostrarRuta(
+    geometry: OsrmRouteGeometry,
+    paradas: RutaParada[],
+    color = '#843fa4',
+    key = 'ruta-activa',
+  ): void {
     if (!this.map) return;
-    this.ocultarRuta();
+    this.ocultarRuta(key);
 
     const coords3857 = geometry.coordinates.map(([lon, lat]) => fromLonLat([lon, lat]));
     const lineFeature = new Feature(new LineString(coords3857));
 
     const source = new VectorSource({ features: [lineFeature] });
-    this.rutaLayer = new VectorLayer({
+    const rutaLayer = new VectorLayer({
       source,
       zIndex: 108,
       style: new Style({
-        stroke: new Stroke({ color: '#843fa4', width: 3, lineCap: 'round', lineJoin: 'round' }),
+        stroke: new Stroke({ color, width: 3, lineCap: 'round', lineJoin: 'round' }),
       }),
     });
-    this.map.addLayer(this.rutaLayer);
+    this.map.addLayer(rutaLayer);
 
     // Flechas de dirección cada ~500 m sobre la geometría de la ruta
     const ARROW_INTERVAL = 750;
@@ -466,7 +472,7 @@ export class VisorMapService {
           ctx.save();
           ctx.translate(Math.round(px), Math.round(py));
           ctx.rotate(bearing);
-          ctx.strokeStyle = '#1a1a1a';
+          ctx.strokeStyle = color;
           ctx.lineWidth = 2;
           ctx.lineCap = 'round';
           ctx.lineJoin = 'round';
@@ -509,20 +515,25 @@ export class VisorMapService {
     // Punto de inicio (verde) y fin (rojo)
     const endpointFeatures: Feature[] = [];
     if (coords3857.length >= 2) {
-      const makeEndpoint = (coord: number[], color: string) => {
+      const makeEndpoint = (coord: number[], endpointColor: string) => {
         const f = new Feature(new Point(coord));
         f.setStyle(new Style({
-          image: new CircleStyle({ radius: 7, fill: new Fill({ color }), stroke: new Stroke({ color: '#ffffff', width: 2 }) }),
+          image: new CircleStyle({ radius: 7, fill: new Fill({ color: endpointColor }), stroke: new Stroke({ color: '#ffffff', width: 2 }) }),
         }));
         return f;
       };
-      endpointFeatures.push(makeEndpoint(coords3857[0], '#2e7d32'));
-      endpointFeatures.push(makeEndpoint(coords3857[coords3857.length - 1], '#c62828'));
+      endpointFeatures.push(makeEndpoint(coords3857[0], color));
+      endpointFeatures.push(makeEndpoint(coords3857[coords3857.length - 1], color));
     }
 
     const paradaSource = new VectorSource({ features: [...endpointFeatures, ...arrowFeatures] });
-    this.rutaParadasLayer = new VectorLayer({ source: paradaSource, zIndex: 109 });
-    this.map.addLayer(this.rutaParadasLayer);
+    const rutaParadasLayer = new VectorLayer({ source: paradaSource, zIndex: 109 });
+    this.map.addLayer(rutaParadasLayer);
+
+    this.rutasRenderizadas.set(key, {
+      rutaLayer,
+      rutaParadasLayer,
+    });
 
     const extent = source.getExtent();
     if (extent && isFinite(extent[0])) {
@@ -530,14 +541,23 @@ export class VisorMapService {
     }
   }
 
-  ocultarRuta(): void {
-    if (this.rutaLayer && this.map) {
-      this.map.removeLayer(this.rutaLayer);
-      this.rutaLayer = null;
+  ocultarRuta(key?: string): void {
+    if (!this.map) return;
+
+    if (!key) {
+      for (const layers of this.rutasRenderizadas.values()) {
+        this.map.removeLayer(layers.rutaLayer);
+        this.map.removeLayer(layers.rutaParadasLayer);
+      }
+      this.rutasRenderizadas.clear();
+      return;
     }
-    if (this.rutaParadasLayer && this.map) {
-      this.map.removeLayer(this.rutaParadasLayer);
-      this.rutaParadasLayer = null;
+
+    const layers = this.rutasRenderizadas.get(key);
+    if (layers) {
+      this.map.removeLayer(layers.rutaLayer);
+      this.map.removeLayer(layers.rutaParadasLayer);
+      this.rutasRenderizadas.delete(key);
     }
   }
 
