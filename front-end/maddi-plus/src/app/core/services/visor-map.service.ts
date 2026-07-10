@@ -25,6 +25,11 @@ import { easeOut } from 'ol/easing';
 import { ContenedorGeoJSON, IncidenciasGeoJSON, PortalesGeoJSON } from '../models/contenedor.model';
 import { OsrmRouteGeometry, RutaParada } from '../models/ruta.model';
 
+interface RutaRenderOptions {
+  showArrows?: boolean;
+  fitToExtent?: boolean;
+}
+
 export type ContenedorClickHandler = (
   lon: number,
   lat: number,
@@ -441,9 +446,12 @@ export class VisorMapService {
     paradas: RutaParada[],
     color = '#843fa4',
     key = 'ruta-activa',
+    options: RutaRenderOptions = {},
   ): void {
     if (!this.map) return;
     this.ocultarRuta(key);
+    const showArrows = options.showArrows ?? true;
+    const fitToExtent = options.fitToExtent ?? true;
 
     const coords3857 = geometry.coordinates.map(([lon, lat]) => fromLonLat([lon, lat]));
     const lineFeature = new Feature(new LineString(coords3857));
@@ -491,25 +499,27 @@ export class VisorMapService {
       return af;
     };
 
-    for (let i = 1; i < coords3857.length; i++) {
-      const prev = coords3857[i - 1];
-      const curr = coords3857[i];
-      const dx = curr[0] - prev[0];
-      const dy = curr[1] - prev[1];
-      const segLen = Math.sqrt(dx * dx + dy * dy);
-      const bearing = Math.atan2(-dy, dx);
+    if (showArrows) {
+      for (let i = 1; i < coords3857.length; i++) {
+        const prev = coords3857[i - 1];
+        const curr = coords3857[i];
+        const dx = curr[0] - prev[0];
+        const dy = curr[1] - prev[1];
+        const segLen = Math.sqrt(dx * dx + dy * dy);
+        const bearing = Math.atan2(-dy, dx);
 
-      let remaining = segLen;
-      let distIntoSeg = ARROW_INTERVAL - accumulated;
+        let remaining = segLen;
+        let distIntoSeg = ARROW_INTERVAL - accumulated;
 
-      while (distIntoSeg <= remaining) {
-        const t = distIntoSeg / segLen;
-        const coord = [prev[0] + dx * t, prev[1] + dy * t];
-        arrowFeatures.push(makeArrowFeature(coord, bearing));
-        distIntoSeg += ARROW_INTERVAL;
+        while (distIntoSeg <= remaining) {
+          const t = distIntoSeg / segLen;
+          const coord = [prev[0] + dx * t, prev[1] + dy * t];
+          arrowFeatures.push(makeArrowFeature(coord, bearing));
+          distIntoSeg += ARROW_INTERVAL;
+        }
+
+        accumulated = (accumulated + segLen) % ARROW_INTERVAL;
       }
-
-      accumulated = (accumulated + segLen) % ARROW_INTERVAL;
     }
 
     // Punto de inicio (verde) y fin (rojo)
@@ -536,7 +546,7 @@ export class VisorMapService {
     });
 
     const extent = source.getExtent();
-    if (extent && isFinite(extent[0])) {
+    if (fitToExtent && extent && isFinite(extent[0])) {
       this.map.getView().fit(extent, { padding: [60, 60, 60, 60], duration: 700, easing: easeOut });
     }
   }

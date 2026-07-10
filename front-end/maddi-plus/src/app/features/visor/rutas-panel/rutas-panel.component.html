@@ -18,13 +18,25 @@
         <span>Buscar por día</span>
         <input type="date" [value]="fechaSeleccionada" (change)="cambiarFecha($event)" />
       </label>
+
+      <div class="render-options">
+        <button class="option-btn" [class.active]="mostrarFlechasDireccion" (click)="toggleFlechasDireccion()" type="button">
+          Flechas
+        </button>
+        <button class="option-btn" [class.active]="mostrarRutaReal" (click)="toggleRutaReal()" type="button">
+          Ruta real
+        </button>
+        <button class="option-btn" [class.active]="mostrarRutaHistorica" (click)="toggleRutaHistorica()" type="button">
+          Ruta histórica
+        </button>
+      </div>
     </div>
     <button class="btn-cerrar" (click)="cerrado.emit()" title="Cerrar">✕</button>
   </div>
 
   <!-- Sin rutas -->
   <div *ngIf="rutas.length === 0" class="sin-rutas">
-    Sin rutas disponibles
+    {{ fechaSeleccionada ? 'Sin rutas disponibles para esa fecha' : 'Selecciona una fecha para consultar rutas históricas' }}
   </div>
 
   <!-- Lista de rutas -->
@@ -37,7 +49,7 @@
           <span class="ruta-icono">🚛</span>
           <div class="ruta-meta">
             <span class="ruta-nombre">{{ ruta.nombre }}</span>
-            <span class="ruta-paradas">{{ ruta.actual.paradas.length }} paradas actuales · {{ ruta.historica ? ruta.historica.paradas.length : 0 }} históricas</span>
+            <span class="ruta-warning" *ngIf="!puedeDibujarse(ruta)">{{ textoRutaNoDisponible() }}</span>
           </div>
           <svg class="chevron" [class.abierto]="isExpandida(ruta)"
                xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24"
@@ -50,9 +62,11 @@
         <!-- Botón activar/desactivar -->
         <button class="btn-toggle"
                 [class.activo]="isActiva(ruta)"
-                [disabled]="isCargando(ruta)"
+          [disabled]="isCargando(ruta) || !puedeDibujarse(ruta)"
                 (click)="toggleRuta.emit(ruta)"
-                [title]="isActiva(ruta) ? 'Ocultar ruta en el mapa' : 'Mostrar ruta en el mapa'">
+          [title]="!puedeDibujarse(ruta)
+              ? textoRutaNoDisponible()
+              : (isActiva(ruta) ? 'Ocultar ruta en el mapa' : 'Mostrar ruta en el mapa')">
           <span *ngIf="isCargando(ruta)" class="spinner"></span>
           <svg *ngIf="!isCargando(ruta)" xmlns="http://www.w3.org/2000/svg" width="13" height="13"
                viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
@@ -65,14 +79,48 @@
         </button>
       </div>
 
-      <div class="estado-row">
-        <span class="estado-chip" [class.completa]="ruta.estado === 'completa'" [class.error]="ruta.estado === 'error'">
-          {{ ruta.estado === 'completa' ? 'Ruta completa' : 'Ruta con error' }}
-        </span>
-      </div>
 
       <!-- Lista de paradas expandible -->
       <div class="paradas-lista" *ngIf="isExpandida(ruta)">
+        <div class="kpis-block">
+          <div class="kpis-title">Comparativa real vs. teórica</div>
+
+          <div class="kpis-grid">
+            <div class="kpi-card">
+              <div class="kpi-label">Duración real</div>
+              <div class="kpi-value">{{ formatMinutos(ruta.kpis.duracionRealMin) }}</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Duración teórica</div>
+              <div class="kpi-value">{{ formatMinutos(ruta.kpis.duracionTeoricaMin) }}</div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Desviación</div>
+              <div class="kpi-value" [class.pos]="getDesviacionClass(ruta.kpis.desviacionDuracionMin) === 'pos'"
+                                [class.neg]="getDesviacionClass(ruta.kpis.desviacionDuracionMin) === 'neg'">
+                {{ formatDesviacion(ruta.kpis.desviacionDuracionMin) }}
+              </div>
+            </div>
+
+            <div class="kpi-card">
+              <div class="kpi-label">Cobertura teórica</div>
+              <div class="kpi-value">{{ formatCobertura(ruta.kpis.coberturaTeoricaPct) }}</div>
+              <div class="kpi-sub" *ngIf="ruta.kpis.paradasTeoricasTotales > 0">
+                {{ ruta.kpis.paradasTeoricasVisitadas }} / {{ ruta.kpis.paradasTeoricasTotales }} paradas
+              </div>
+            </div>
+          </div>
+
+          <div class="kpi-missed" *ngIf="ruta.kpis.paradasTeoricasNoVisitadas.length > 0">
+            <div class="kpi-missed-title">Paradas teóricas no visitadas</div>
+            <div class="kpi-missed-item" *ngFor="let parada of ruta.kpis.paradasTeoricasNoVisitadas">
+              {{ parada }}
+            </div>
+          </div>
+        </div>
+
         <div class="version-block">
           <div class="version-tag version-actual">Color actual</div>
           <div *ngFor="let parada of ruta.actual.paradas" class="parada-item parada-clickable"

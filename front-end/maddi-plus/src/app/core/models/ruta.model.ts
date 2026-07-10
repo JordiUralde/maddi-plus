@@ -24,11 +24,22 @@ export interface RutaVersion {
   paradas: RutaParada[];
 }
 
+export interface RutaKpis {
+  duracionRealMin: number | null;
+  duracionTeoricaMin: number | null;
+  desviacionDuracionMin: number | null;
+  coberturaTeoricaPct: number | null;
+  paradasTeoricasTotales: number;
+  paradasTeoricasVisitadas: number;
+  paradasTeoricasNoVisitadas: string[];
+}
+
 export interface RutaComparada {
   id: string;
   nombre: string;
   estado: 'completa' | 'error';
   diferencias: string[];
+  kpis: RutaKpis;
   actual: RutaVersion;
   historica: RutaVersion | null;
 }

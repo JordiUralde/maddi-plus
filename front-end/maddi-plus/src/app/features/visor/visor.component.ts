@@ -89,7 +89,17 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   rutasActivas = new Set<string>();
   rutasCargando = new Set<string>();
   mostrarPanelRutas = false;
-  fechaRutas = this.obtenerFechaLocal();
+  fechaRutas = '';
+  mostrarFlechasDireccion = true;
+  mostrarRutaReal = true;
+  mostrarRutaHistorica = true;
+  private rutaActivaRender:
+    | {
+        ruta: RutaComparada;
+        actualGeometry: OsrmRouteGeometry;
+        historicaGeometry: OsrmRouteGeometry;
+      }
+    | null = null;
   constructor(
     private mapService: VisorMapService,
     private mapaFondoService: MapaFondoService,
@@ -320,7 +330,6 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   // ── Rutas ─────────────────────────────────────────────────────────────────
-
   togglePanelRutas(): void {
     this.mostrarPanelRutas = !this.mostrarPanelRutas;
     if (!this.mostrarPanelRutas) {
@@ -333,10 +342,21 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
       // Desactivar — crear nueva referencia para que OnPush la detecte
       this.rutasActivas = new Set(this.rutasActivas);
       this.rutasActivas.delete(ruta.id);
-      this.mapService.ocultarRuta(ruta.id);
+      this.rutaActivaRender = null;
+      this.mapService.ocultarRuta();
       this.cdr.markForCheck();
       return;
     }
+
+    if (!ruta.historica || ruta.historica.paradas.length === 0) {
+      this.rutasActivas = new Set(this.rutasActivas);
+      this.rutasActivas.delete(ruta.id);
+      this.rutaActivaRender = null;
+      this.mapService.ocultarRuta();
+      this.cdr.markForCheck();
+      return;
+    }
+
     // Activar: desactivar cualquier ruta previa y cargar ambas versiones en el mapa
     this.rutasActivas = new Set<string>();
     this.rutasCargando = new Set(this.rutasCargando);
@@ -349,14 +369,15 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
 
     forkJoin({ actual: actual$, historica: historica$ }).subscribe({
       next: ({ actual, historica }) => {
-        this.rutasActivas = new Set<string>();
         this.rutasActivas.add(ruta.id);
         this.rutasCargando = new Set(this.rutasCargando);
         this.rutasCargando.delete(ruta.id);
-        this.mapService.mostrarRuta(actual, ruta.actual.paradas, '#843fa4', `${ruta.id}:actual`);
-        if (ruta.historica) {
-          this.mapService.mostrarRuta(historica, ruta.historica.paradas, '#81c784', `${ruta.id}:historica`);
-        }
+        this.rutaActivaRender = {
+          ruta,
+          actualGeometry: actual,
+          historicaGeometry: historica,
+        };
+        this.redibujarRutaActiva(true);
         this.cdr.markForCheck();
       },
       error: () => {
@@ -365,6 +386,54 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
         this.cdr.markForCheck();
       },
     });
+  }
+
+  onMostrarFlechasDireccionCambiado(valor: boolean): void {
+    this.mostrarFlechasDireccion = valor;
+    this.redibujarRutaActiva(false);
+    this.cdr.markForCheck();
+  }
+
+  onMostrarRutaRealCambiado(valor: boolean): void {
+    this.mostrarRutaReal = valor;
+    this.redibujarRutaActiva(false);
+    this.cdr.markForCheck();
+  }
+
+  onMostrarRutaHistoricaCambiado(valor: boolean): void {
+    this.mostrarRutaHistorica = valor;
+    this.redibujarRutaActiva(false);
+    this.cdr.markForCheck();
+  }
+
+  private redibujarRutaActiva(ajustarVista: boolean): void {
+    if (!this.rutaActivaRender) return;
+
+    const { ruta, actualGeometry, historicaGeometry } = this.rutaActivaRender;
+    this.mapService.ocultarRuta();
+
+    let fitPendiente = ajustarVista;
+
+    if (this.mostrarRutaReal) {
+      this.mapService.mostrarRuta(
+        actualGeometry,
+        ruta.actual.paradas,
+        '#843fa4',
+        `${ruta.id}:actual`,
+        { showArrows: this.mostrarFlechasDireccion, fitToExtent: fitPendiente },
+      );
+      fitPendiente = false;
+    }
+
+    if (this.mostrarRutaHistorica && ruta.historica) {
+      this.mapService.mostrarRuta(
+        historicaGeometry,
+        ruta.historica.paradas,
+        '#81c784',
+        `${ruta.id}:historica`,
+        { showArrows: this.mostrarFlechasDireccion, fitToExtent: fitPendiente },
+      );
+    }
   }
 
   onParadaClick(parada: RutaParada): void {
@@ -434,6 +503,7 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
       next: (rutas) => {
         this.rutas = rutas;
         this.rutasActivas.clear();
+        this.rutaActivaRender = null;
         this.mapService.ocultarRuta();
         this.cdr.markForCheck();
       },
@@ -441,15 +511,9 @@ export class VisorComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   onFechaRutasCambiada(fecha: string): void {
-    if (!fecha || fecha === this.fechaRutas) return;
+    if (fecha === this.fechaRutas) return;
     this.fechaRutas = fecha;
     this.cargarRutas();
-  }
-
-  private obtenerFechaLocal(): string {
-    const fecha = new Date();
-    const offset = fecha.getTimezoneOffset() * 60000;
-    return new Date(fecha.getTime() - offset).toISOString().slice(0, 10);
   }
 
   private buscarPortales(lon: number, lat: number, radio: number): void {

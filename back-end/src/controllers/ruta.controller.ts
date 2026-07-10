@@ -7,9 +7,9 @@ export async function getRutaParadas(
   next: NextFunction,
 ): Promise<void> {
   try {
-    const fecha = String(req.query.fecha ?? '').trim() || new Date().toISOString().slice(0, 10);
+    const fecha = String(req.query.fecha ?? '').trim();
 
-    const comparadas = await findRutaComparadas(fecha);
+    const comparadas = await findRutaComparadas(fecha || null);
     res.status(200).json({ fecha, rutas: comparadas });
   } catch (err) {
     next(err);
